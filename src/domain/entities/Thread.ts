@@ -1,11 +1,10 @@
 import { InvalidArgumentException } from '../exceptions/InvalidArgumentException';
-import { Reply } from './Reply';
 
 interface ThreadProps {
   id: string;
   authorID: string;
   content: string;
-  replies?: Reply[];
+  replyCount?: number;
   createdAt?: Date;
 }
 
@@ -15,14 +14,14 @@ export class Thread {
   public readonly id: string;
   public readonly authorID: string;
   public readonly content: string;
-  public readonly replies: Reply[];
+  public readonly replyCount: number;
   public readonly createdAt: Date;
 
   private constructor(props: ThreadProps) {
     this.id = props.id;
     this.authorID = props.authorID;
     this.content = props.content;
-    this.replies = props.replies || [];
+    this.replyCount = props.replyCount || 0;
     this.createdAt = props.createdAt || new Date();
 
     this.validate();
@@ -44,19 +43,15 @@ export class Thread {
         'Thread content cannot be empty',
       );
     }
-  }
-
-  replyThread(reply: Reply) {
-    if (reply.content.length > Thread.MAX_CONTENT_CHAR) {
+    if (this.replyCount < 0) {
       throw new InvalidArgumentException(
-        'REPLY_CONTENT_TOO_LONG_ERROR',
-        `Reply content exceeds the limit of ${Thread.MAX_CONTENT_CHAR} characters`,
+        'THREAD_INVALID_REPLY_COUNT_ERROR',
+        'Reply count cannot be negative',
       );
     }
-    this.replies.push(reply);
   }
 
-  static create(props: Omit<ThreadProps, 'replies' | 'createdAt'>): Thread {
+  static create(props: Omit<ThreadProps, 'replyCount' | 'createdAt'>): Thread {
     if (props.content.length > this.MAX_CONTENT_CHAR) {
       throw new InvalidArgumentException(
         'THREAD_CONTENT_TOO_LONG_ERROR',

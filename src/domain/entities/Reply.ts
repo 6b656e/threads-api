@@ -9,6 +9,8 @@ interface ReplyProps {
 }
 
 export class Reply {
+  private static readonly MAX_CONTENT_CHAR = 280;
+
   public readonly id: string;
   public readonly threadID: string;
   public readonly authorID: string;
@@ -50,6 +52,12 @@ export class Reply {
   }
 
   static create(props: Omit<ReplyProps, 'createdAt'>): Reply {
+    if (props.content.length > this.MAX_CONTENT_CHAR) {
+      throw new InvalidArgumentException(
+        'REPLY_CONTENT_TOO_LONG_ERROR',
+        `Reply content exceeds the limit of ${this.MAX_CONTENT_CHAR} characters`,
+      );
+    }
     return new Reply(props);
   }
 

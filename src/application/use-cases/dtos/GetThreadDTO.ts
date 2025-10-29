@@ -11,7 +11,7 @@ export interface GetThreadResponse {
     id: string;
     author_id: string;
     content: string;
-    replyCount: number;
+    reply_count: number;
     created_at: string;
   };
   includes: {

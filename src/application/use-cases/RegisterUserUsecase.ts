@@ -19,7 +19,7 @@ export class RegisterUserUsecase {
   async execute(request: RegisterUserRequest): Promise<RegisterUserResponse> {
     validate(RegisterUserSchema, request);
 
-    const user = await this.userRepo.userWithCredentials(request.username);
+    const user = await this.userRepo.findByCredentials(request.username);
     if (user) {
       throw new DuplicationException(
         'USER_NAME_ALREADY_TAKEN_ERROR',

@@ -19,7 +19,7 @@ export class LoginUserUsecase {
   async execute(request: LoginUserRequest): Promise<LoginUserResponse> {
     validate(LoginUserSchema, request);
 
-    const user = await this.userRepo.userWithCredentials(request.username);
+    const user = await this.userRepo.findByCredentials(request.username);
     if (!user) {
       throw new InvalidCredentialsException(
         'USER_INVALID_CREDENTIALS_ERROR',

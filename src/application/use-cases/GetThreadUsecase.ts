@@ -41,7 +41,7 @@ export class GetThreadUsecase {
         id: thread.id,
         author_id: thread.authorID,
         content: thread.content,
-        replyCount: thread.replies.length,
+        reply_count: thread.replyCount,
         created_at: thread.createdAt.toString(),
       },
       includes: {
