@@ -31,7 +31,7 @@ export class RegisterUserUsecase {
 
     const hashedPassword = await this.passwordHasher.hash(request.password);
 
-    await this.userRepo.register(
+    await this.userRepo.save(
       User.create({
         id: nanoid(),
         username: request.username,

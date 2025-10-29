@@ -10,6 +10,8 @@ interface ThreadProps {
 }
 
 export class Thread {
+  private static readonly MAX_CONTENT_CHAR = 280;
+
   public readonly id: string;
   public readonly authorID: string;
   public readonly content: string;
@@ -45,10 +47,22 @@ export class Thread {
   }
 
   replyThread(reply: Reply) {
+    if (reply.content.length > Thread.MAX_CONTENT_CHAR) {
+      throw new InvalidArgumentException(
+        'REPLY_CONTENT_TOO_LONG_ERROR',
+        `Reply content exceeds the limit of ${Thread.MAX_CONTENT_CHAR} characters`,
+      );
+    }
     this.replies.push(reply);
   }
 
   static create(props: Omit<ThreadProps, 'replies' | 'createdAt'>): Thread {
+    if (props.content.length > this.MAX_CONTENT_CHAR) {
+      throw new InvalidArgumentException(
+        'THREAD_CONTENT_TOO_LONG_ERROR',
+        `Thread content exceeds the limit of ${this.MAX_CONTENT_CHAR} characters`,
+      );
+    }
     return new Thread(props);
   }
 
