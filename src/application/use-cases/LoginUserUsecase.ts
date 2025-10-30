@@ -38,7 +38,7 @@ export class LoginUserUsecase {
       );
     }
 
-    const tokenPayload = { sub: user.id };
+    const tokenPayload = { id: user.id };
     const accessToken = await this.tokenManager.generate(tokenPayload);
 
     return { accessToken };

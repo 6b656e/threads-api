@@ -1,5 +1,7 @@
 export interface ICacheService {
-  set(key: string, value: string, expiresIn: Date): Promise<void>;
-  get(key: string): Promise<string>;
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  set(key: string, value: string, ttlSeconds: number): Promise<void>;
+  get(key: string): Promise<string | null>;
   delete(key: string): Promise<void>;
 }
