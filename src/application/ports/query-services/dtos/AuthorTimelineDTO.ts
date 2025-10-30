@@ -4,6 +4,6 @@ import { ThreadDTO } from './ThreadDTO';
 
 export interface AuthorTimelineDTO {
   replies: ReplyDTO[];
-  thread: ThreadDTO[];
+  threads: ThreadDTO[];
   authors: AuthorDTO[];
 }

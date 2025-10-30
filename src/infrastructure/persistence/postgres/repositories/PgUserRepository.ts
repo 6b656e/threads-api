@@ -6,8 +6,11 @@ export class PgUserRepository implements IUserRepository {
   constructor(private readonly pool: Pool) {}
 
   async save(user: User): Promise<void> {
-    await this.pool.query({
-      text: `INSERT INTO users (
+    const client = await this.pool.connect();
+    try {
+      await this.pool.query({
+        text: `
+          INSERT INTO users (
             id,
             username,
             password,
@@ -17,47 +20,62 @@ export class PgUserRepository implements IUserRepository {
           UPDATE SET
             username = $2,
             password = $3`,
-      values: [user.id, user.username, user.hashedPassword, user.createdAt],
-    });
+        values: [user.id, user.username, user.hashedPassword, user.createdAt],
+      });
+    } finally {
+      client.release();
+    }
   }
 
   async findByID(id: string): Promise<User | null> {
-    const { rowCount, rows } = await this.pool.query<User>({
-      text: `SELECT
+    const client = await this.pool.connect();
+    try {
+      const { rowCount, rows } = await this.pool.query<User>({
+        text: `
+          SELECT
             id,
             username,
             password AS "hashedPassword",
             created_at AS "createdAt"
           FROM users
           WHERE id = $1`,
-      values: [id],
-    });
-    if (!rowCount) return null;
-    return User.reconstitute({
-      id: rows[0].id,
-      username: rows[0].username,
-      hashedPassword: rows[0].hashedPassword,
-      createdAt: rows[0].createdAt,
-    });
+        values: [id],
+      });
+      if (!rowCount) return null;
+      return User.reconstitute({
+        id: rows[0].id,
+        username: rows[0].username,
+        hashedPassword: rows[0].hashedPassword,
+        createdAt: rows[0].createdAt,
+      });
+    } finally {
+      client.release();
+    }
   }
 
   async findByCredentials(username: string): Promise<User | null> {
-    const { rowCount, rows } = await this.pool.query<User>({
-      text: `SELECT
+    const client = await this.pool.connect();
+    try {
+      const { rowCount, rows } = await this.pool.query<User>({
+        text: `
+          SELECT
             id,
             username,
             password AS "hashedPassword",
             created_at AS "createdAt"
           FROM users
           WHERE username = $1`,
-      values: [username],
-    });
-    if (!rowCount) return null;
-    return User.reconstitute({
-      id: rows[0].id,
-      username: rows[0].username,
-      hashedPassword: rows[0].hashedPassword,
-      createdAt: rows[0].createdAt,
-    });
+        values: [username],
+      });
+      if (!rowCount) return null;
+      return User.reconstitute({
+        id: rows[0].id,
+        username: rows[0].username,
+        hashedPassword: rows[0].hashedPassword,
+        createdAt: rows[0].createdAt,
+      });
+    } finally {
+      client.release();
+    }
   }
 }
