@@ -1,6 +1,6 @@
 import { validate } from '../commons/validation';
 import { NotFoundException } from '../exceptions/NotFoundException';
-import { IUserProfileQueryService } from '../ports/query-services/IUserProfileQS';
+import { IUserProfileQS } from '../ports/query-services/IUserProfileQS';
 import {
   GetUserProfileRequest,
   GetUserProfileResponse,
@@ -8,7 +8,7 @@ import {
 } from './dtos/GetUserProfileDTO';
 
 export class GetUserProfileUsecase {
-  constructor(private readonly userProfileQS: IUserProfileQueryService) {}
+  constructor(private readonly userProfileQS: IUserProfileQS) {}
 
   async execute(request: GetUserProfileRequest): Promise<GetUserProfileResponse> {
     validate(GetUserProfileSchema, request);

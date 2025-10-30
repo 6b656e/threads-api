@@ -6,6 +6,6 @@ interface UserProfile {
   createdAt: Date;
 }
 
-export interface IUserProfileQueryService {
+export interface IUserProfileQS {
   getUserProfile(userID: string): Promise<UserProfile | null>;
 }
