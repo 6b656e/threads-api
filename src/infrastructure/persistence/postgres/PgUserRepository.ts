@@ -15,9 +15,8 @@ export class PgUserRepository implements IUserRepository {
           VALUES ($1, $2, $3, $4)
           ON CONFLICT (id) DO
           UPDATE SET
-            name = $2,
-            username = $3,
-            password = $4`,
+            username = $2,
+            password = $3`,
       values: [user.id, user.username, user.hashedPassword, user.createdAt],
     });
   }
