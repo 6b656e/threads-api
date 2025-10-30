@@ -8,8 +8,5 @@ export const PostThreadSchema = z.object({
 export type PostThreadRequest = z.infer<typeof PostThreadSchema>;
 
 export interface PostThreadResponse {
-  message: string;
-  data: {
-    id: string;
-  };
+  id: string;
 }

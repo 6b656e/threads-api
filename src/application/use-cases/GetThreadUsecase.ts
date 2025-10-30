@@ -1,8 +1,6 @@
 import { validate } from '../commons/validation';
-import { InconsistencyException } from '../exceptions/InconsitencyException';
 import { NotFoundException } from '../exceptions/NotFoundException';
-import { IThreadRepository } from '../ports/repositories/IThreadRepository';
-import { IUserRepository } from '../ports/repositories/IUserRepository';
+import { IThreadWithAuthorQS } from '../ports/query-services/IThreadWithAuthorQS';
 import {
   GetThreadRequest,
   GetThreadResponse,
@@ -10,16 +8,15 @@ import {
 } from './dtos/GetThreadDTO';
 
 export class GetThreadUsecase {
-  constructor(
-    private readonly threadRepo: IThreadRepository,
-    private readonly userRepo: IUserRepository,
-  ) {}
+  constructor(private readonly threadWithAuthorQS: IThreadWithAuthorQS) {}
 
   async execute(request: GetThreadRequest): Promise<GetThreadResponse> {
     validate(GetThreadSchema, request);
 
-    const thread = await this.threadRepo.findByID(request.threadID);
-    if (!thread) {
+    const threadWithAuthor = await this.threadWithAuthorQS.getThreadWithAuthor(
+      request.threadID,
+    );
+    if (!threadWithAuthor) {
       throw new NotFoundException(
         'THREAD_NOT_FOUND_ERROR',
         'Thread',
@@ -28,30 +25,6 @@ export class GetThreadUsecase {
       );
     }
 
-    const author = await this.userRepo.findByID(thread.authorID);
-    if (!author) {
-      throw new InconsistencyException(
-        'USER_DATA_INCONSISTENCY_ERROR',
-        'Thread exists but author not found',
-      );
-    }
-
-    return {
-      data: {
-        id: thread.id,
-        author_id: thread.authorID,
-        content: thread.content,
-        reply_count: thread.replyCount,
-        created_at: thread.createdAt.toString(),
-      },
-      includes: {
-        users: [
-          {
-            id: author.id,
-            username: author.username,
-          },
-        ],
-      },
-    };
+    return threadWithAuthor;
   }
 }

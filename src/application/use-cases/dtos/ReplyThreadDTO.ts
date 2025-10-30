@@ -9,8 +9,5 @@ export const ReplyThreadSchema = z.object({
 export type ReplyThreadRequest = z.infer<typeof ReplyThreadSchema>;
 
 export interface ReplyThreadResponse {
-  message: string;
-  data: {
-    id: string;
-  };
+  id: string;
 }

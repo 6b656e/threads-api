@@ -7,17 +7,15 @@ export const GetThreadSchema = z.object({
 export type GetThreadRequest = z.infer<typeof GetThreadSchema>;
 
 export interface GetThreadResponse {
-  data: {
+  thread: {
     id: string;
-    author_id: string;
+    authorID: string;
     content: string;
-    reply_count: number;
-    created_at: string;
+    replyCount: number;
+    createdAt: Date;
   };
-  includes: {
-    users: Array<{
-      id: string;
-      username: string;
-    }>;
-  };
+  authors: Array<{
+    id: string;
+    username: string;
+  }>;
 }

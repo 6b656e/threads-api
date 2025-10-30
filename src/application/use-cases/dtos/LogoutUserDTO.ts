@@ -7,7 +7,3 @@ export const LogoutUserSchema = z.object({
 });
 
 export type LogoutUserRequest = z.infer<typeof LogoutUserSchema>;
-
-export interface LogoutUserResponse {
-  message: string;
-}

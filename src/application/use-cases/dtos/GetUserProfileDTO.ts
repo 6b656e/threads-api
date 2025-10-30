@@ -7,11 +7,9 @@ export const GetUserProfileSchema = z.object({
 export type GetUserProfileRequest = z.infer<typeof GetUserProfileSchema>;
 
 export interface GetUserProfileResponse {
-  data: {
-    id: string;
-    username: string;
-    thread_count: number;
-    reply_count: number;
-    created_at: string;
-  };
+  id: string;
+  username: string;
+  threadCount: number;
+  replyCount: number;
+  createdAt: Date;
 }

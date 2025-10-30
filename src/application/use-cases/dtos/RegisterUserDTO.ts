@@ -6,7 +6,3 @@ export const RegisterUserSchema = z.object({
 });
 
 export type RegisterUserRequest = z.infer<typeof RegisterUserSchema>;
-
-export interface RegisterUserResponse {
-  message: string;
-}

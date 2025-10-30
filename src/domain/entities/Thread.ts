@@ -4,7 +4,6 @@ interface ThreadProps {
   id: string;
   authorID: string;
   content: string;
-  replyCount?: number;
   createdAt?: Date;
 }
 
@@ -14,14 +13,12 @@ export class Thread {
   public readonly id: string;
   public readonly authorID: string;
   public readonly content: string;
-  public readonly replyCount: number;
   public readonly createdAt: Date;
 
   private constructor(props: ThreadProps) {
     this.id = props.id;
     this.authorID = props.authorID;
     this.content = props.content;
-    this.replyCount = props.replyCount || 0;
     this.createdAt = props.createdAt || new Date();
 
     this.validate();
@@ -43,15 +40,9 @@ export class Thread {
         'Thread content cannot be empty',
       );
     }
-    if (this.replyCount < 0) {
-      throw new InvalidArgumentException(
-        'THREAD_INVALID_REPLY_COUNT_ERROR',
-        'Reply count cannot be negative',
-      );
-    }
   }
 
-  static create(props: Omit<ThreadProps, 'replyCount' | 'createdAt'>): Thread {
+  static create(props: Omit<ThreadProps, 'createdAt'>): Thread {
     if (props.content.length > this.MAX_CONTENT_CHAR) {
       throw new InvalidArgumentException(
         'THREAD_CONTENT_TOO_LONG_ERROR',

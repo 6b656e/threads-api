@@ -41,11 +41,6 @@ export class LoginUserUsecase {
     const tokenPayload = { sub: user.id };
     const accessToken = await this.tokenManager.generate(tokenPayload);
 
-    return {
-      message: 'User login successful',
-      data: {
-        access_token: accessToken,
-      },
-    };
+    return { accessToken };
   }
 }

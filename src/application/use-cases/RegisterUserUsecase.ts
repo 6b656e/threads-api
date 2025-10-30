@@ -3,11 +3,7 @@ import { validate } from '../commons/validation';
 import { DuplicationException } from '../exceptions/DuplicationException';
 import { IUserRepository } from '../ports/repositories/IUserRepository';
 import { IHasherService } from '../ports/services/IHasherService';
-import {
-  RegisterUserRequest,
-  RegisterUserResponse,
-  RegisterUserSchema,
-} from './dtos/RegisterUserDTO';
+import { RegisterUserRequest, RegisterUserSchema } from './dtos/RegisterUserDTO';
 import { User } from 'src/domain/entities/User';
 
 export class RegisterUserUsecase {
@@ -16,7 +12,7 @@ export class RegisterUserUsecase {
     private readonly passwordHasher: IHasherService,
   ) {}
 
-  async execute(request: RegisterUserRequest): Promise<RegisterUserResponse> {
+  async execute(request: RegisterUserRequest): Promise<void> {
     validate(RegisterUserSchema, request);
 
     const user = await this.userRepo.findByCredentials(request.username);
@@ -38,9 +34,5 @@ export class RegisterUserUsecase {
         hashedPassword,
       }),
     );
-
-    return {
-      message: 'User registration successful',
-    };
   }
 }

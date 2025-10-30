@@ -34,11 +34,6 @@ export class PostThreadUsecase {
       }),
     );
 
-    return {
-      message: 'Post new thread successful',
-      data: {
-        id,
-      },
-    };
+    return { id };
   }
 }

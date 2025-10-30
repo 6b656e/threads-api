@@ -49,11 +49,6 @@ export class ReplyThreadUsecase {
       }),
     );
 
-    return {
-      message: 'Replied to the thread successfully',
-      data: {
-        id,
-      },
-    };
+    return { id };
   }
 }
