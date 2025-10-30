@@ -1,16 +1,11 @@
-import { createClient, RedisClientType } from 'redis';
+import { RedisClientType } from 'redis';
 import { ICacheService } from 'src/application/ports/services/ICacheService';
 import { CacheConnectionException } from 'src/infrastructure/exceptions/CacheConnectionException';
 
 export class RedisCacheService implements ICacheService {
-  private readonly redisClient: RedisClientType<any>;
   private readonly isConnected = false;
 
-  constructor(redisHost: string, redisPort: number) {
-    this.redisClient = createClient({
-      socket: { host: redisHost, port: redisPort },
-    });
-  }
+  constructor(private readonly redisClient: RedisClientType<any>) {}
 
   async connect(): Promise<void> {
     await this.redisClient.connect();
