@@ -1,22 +1,19 @@
 import { validate } from '../commons/validation';
 import { NotFoundException } from '../exceptions/NotFoundException';
-import { IThreadWithAuthorQS } from '../ports/query-services/IThreadWithAuthorQS';
-import {
-  GetThreadRequest,
-  GetThreadResponse,
-  GetThreadSchema,
-} from './dtos/GetThreadDTO';
+import { ThreadWithReferencesDTO } from '../ports/query-services/dtos/ThreadWithReferencesDTO';
+import { IThreadWithReferencesQS } from '../ports/query-services/IThreadWithReferencesQS';
+import { GetThreadRequest, GetThreadSchema } from './dtos/GetThreadDTO';
 
 export class GetThreadUsecase {
-  constructor(private readonly threadWithAuthorQS: IThreadWithAuthorQS) {}
+  constructor(private readonly threadWithReferencesQS: IThreadWithReferencesQS) {}
 
-  async execute(request: GetThreadRequest): Promise<GetThreadResponse> {
+  async execute(request: GetThreadRequest): Promise<ThreadWithReferencesDTO> {
     validate(GetThreadSchema, request);
 
-    const threadWithAuthor = await this.threadWithAuthorQS.getThreadWithAuthor(
+    const threadWithRefs = await this.threadWithReferencesQS.getThreadWithReferences(
       request.threadID,
     );
-    if (!threadWithAuthor) {
+    if (!threadWithRefs) {
       throw new NotFoundException(
         'THREAD_NOT_FOUND_ERROR',
         'Thread',
@@ -25,6 +22,6 @@ export class GetThreadUsecase {
       );
     }
 
-    return threadWithAuthor;
+    return threadWithRefs;
   }
 }

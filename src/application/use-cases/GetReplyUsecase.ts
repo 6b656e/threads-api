@@ -1,26 +1,28 @@
 import { validate } from '../commons/validation';
 import { NotFoundException } from '../exceptions/NotFoundException';
-import { IReplyWithAuthorQS } from '../ports/query-services/IReplyWithAuthorQS';
-import {
-  GetReplyRequest,
-  GetReplyResponse,
-  GetReplySchema,
-} from './dtos/GetReplyUsecase';
+import { ReplyWithReferencesDTO } from '../ports/query-services/dtos/ReplyWithReferencesDTO';
+import { IReplyWithReferencesQS } from '../ports/query-services/IReplyWithReferencesQS';
+import { GetReplyRequest, GetReplySchema } from './dtos/GetReplyDTO';
 
 export class GetReplyUsecase {
-  constructor(private readonly replyWithAuthorQS: IReplyWithAuthorQS) {}
+  constructor(private readonly replyWithReferencesQS: IReplyWithReferencesQS) {}
 
-  async execute(request: GetReplyRequest): Promise<GetReplyResponse> {
+  async execute(request: GetReplyRequest): Promise<ReplyWithReferencesDTO> {
     validate(GetReplySchema, request);
 
-    const replyWithAuthors = await this.replyWithAuthorQS.getReplyWithAuthor(
+    const replyWithRefs = await this.replyWithReferencesQS.getReplyWithReferences(
       request.threadID,
       request.replyID,
     );
-    if (!replyWithAuthors) {
-      throw new NotFoundException('REPLY_NOT_FOUND', 'Reply', 'ID', request.replyID);
+    if (!replyWithRefs) {
+      throw new NotFoundException(
+        'REPLY_NOT_FOUND_ERROR',
+        'Reply',
+        'ID',
+        request.replyID,
+      );
     }
 
-    return replyWithAuthors;
+    return replyWithRefs;
   }
 }
