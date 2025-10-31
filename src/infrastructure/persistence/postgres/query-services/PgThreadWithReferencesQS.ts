@@ -3,6 +3,7 @@ import { AuthorDTO } from 'src/application/ports/query-services/dtos/AuthorDTO';
 import { ThreadDTO } from 'src/application/ports/query-services/dtos/ThreadDTO';
 import { ThreadWithReferencesDTO } from 'src/application/ports/query-services/dtos/ThreadWithReferencesDTO';
 import { IThreadWithReferencesQS } from 'src/application/ports/query-services/IThreadWithReferencesQS';
+import { DatabaseQueryException } from 'src/infrastructure/exceptions/DatabaseQueryException';
 
 export class PgThreadWithReferencesQS implements IThreadWithReferencesQS {
   constructor(private readonly pool: Pool) {}
@@ -39,6 +40,11 @@ export class PgThreadWithReferencesQS implements IThreadWithReferencesQS {
         thread: threads.rows[0],
         author: authors.rows[0],
       };
+    } catch (err) {
+      throw new DatabaseQueryException(
+        `Failed to get thread with threadID: ${threadID}`,
+        err,
+      );
     } finally {
       client.release();
     }

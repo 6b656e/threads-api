@@ -4,6 +4,7 @@ import { ReplyDTO } from 'src/application/ports/query-services/dtos/ReplyDTO';
 import { ReplyWithReferencesDTO } from 'src/application/ports/query-services/dtos/ReplyWithReferencesDTO';
 import { ThreadDTO } from 'src/application/ports/query-services/dtos/ThreadDTO';
 import { IReplyWithReferencesQS } from 'src/application/ports/query-services/IReplyWithReferencesQS';
+import { DatabaseQueryException } from 'src/infrastructure/exceptions/DatabaseQueryException';
 
 export class PgReplyWithReferencesQS implements IReplyWithReferencesQS {
   constructor(private readonly pool: Pool) {}
@@ -57,6 +58,11 @@ export class PgReplyWithReferencesQS implements IReplyWithReferencesQS {
         thread: threads.rows[0],
         authors: authors.rows,
       };
+    } catch (err) {
+      throw new DatabaseQueryException(
+        `Failed to get reply with replyID: ${replyID}; threadID: ${threadID}`,
+        err,
+      );
     } finally {
       client.release();
     }

@@ -1,6 +1,7 @@
 import { IUserRepository } from 'src/application/ports/repositories/IUserRepository';
 import { User } from 'src/domain/entities/User';
 import { Pool } from 'pg';
+import { DatabaseQueryException } from 'src/infrastructure/exceptions/DatabaseQueryException';
 
 export class PgUserRepository implements IUserRepository {
   constructor(private readonly pool: Pool) {}
@@ -8,7 +9,7 @@ export class PgUserRepository implements IUserRepository {
   async save(user: User): Promise<void> {
     const client = await this.pool.connect();
     try {
-      await this.pool.query({
+      await client.query({
         text: `
           INSERT INTO users (
             id,
@@ -22,6 +23,8 @@ export class PgUserRepository implements IUserRepository {
             password = $3`,
         values: [user.id, user.username, user.hashedPassword, user.createdAt],
       });
+    } catch (err) {
+      throw new DatabaseQueryException('Failed to save user', err);
     } finally {
       client.release();
     }
@@ -30,7 +33,7 @@ export class PgUserRepository implements IUserRepository {
   async findByID(id: string): Promise<User | null> {
     const client = await this.pool.connect();
     try {
-      const { rowCount, rows } = await this.pool.query<User>({
+      const { rowCount, rows } = await client.query<User>({
         text: `
           SELECT
             id,
@@ -48,6 +51,8 @@ export class PgUserRepository implements IUserRepository {
         hashedPassword: rows[0].hashedPassword,
         createdAt: rows[0].createdAt,
       });
+    } catch (err) {
+      throw new DatabaseQueryException(`Failed to find user with id: ${id}`, err);
     } finally {
       client.release();
     }
@@ -56,7 +61,7 @@ export class PgUserRepository implements IUserRepository {
   async findByCredentials(username: string): Promise<User | null> {
     const client = await this.pool.connect();
     try {
-      const { rowCount, rows } = await this.pool.query<User>({
+      const { rowCount, rows } = await client.query<User>({
         text: `
           SELECT
             id,
@@ -74,6 +79,11 @@ export class PgUserRepository implements IUserRepository {
         hashedPassword: rows[0].hashedPassword,
         createdAt: rows[0].createdAt,
       });
+    } catch (err) {
+      throw new DatabaseQueryException(
+        `Failed to find user with username: ${username}`,
+        err,
+      );
     } finally {
       client.release();
     }

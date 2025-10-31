@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import { IReplyRepository } from 'src/application/ports/repositories/IReplyRepository';
 import { Reply } from 'src/domain/entities/Reply';
+import { DatabaseQueryException } from 'src/infrastructure/exceptions/DatabaseQueryException';
 
 export class PgReplyRepository implements IReplyRepository {
   constructor(private readonly pool: Pool) {}
@@ -27,6 +28,8 @@ export class PgReplyRepository implements IReplyRepository {
           reply.createdAt,
         ],
       });
+    } catch (err) {
+      throw new DatabaseQueryException('Failed to save reply', err);
     } finally {
       client.release();
     }
@@ -35,7 +38,7 @@ export class PgReplyRepository implements IReplyRepository {
   async findByID(id: string): Promise<Reply | null> {
     const client = await this.pool.connect();
     try {
-      const { rowCount, rows } = await this.pool.query<Reply>({
+      const { rowCount, rows } = await client.query<Reply>({
         text: `
           SELECT
             id,
@@ -55,6 +58,8 @@ export class PgReplyRepository implements IReplyRepository {
         content: rows[0].content,
         createdAt: rows[0].createdAt,
       });
+    } catch (err) {
+      throw new DatabaseQueryException(`Failed to find reply with id: ${id}`, err);
     } finally {
       client.release();
     }

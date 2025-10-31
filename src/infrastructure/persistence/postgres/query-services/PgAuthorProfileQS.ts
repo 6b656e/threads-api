@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import { AuthorProfileDTO } from 'src/application/ports/query-services/dtos/AuthorProfileDTO';
 import { IAuthorProfileQS } from 'src/application/ports/query-services/IAuthorProfileQS';
+import { DatabaseQueryException } from 'src/infrastructure/exceptions/DatabaseQueryException';
 
 export class PgAuthorProfileQS implements IAuthorProfileQS {
   constructor(private readonly pool: Pool) {}
@@ -25,6 +26,11 @@ export class PgAuthorProfileQS implements IAuthorProfileQS {
       });
       if (!rowCount) return null;
       return rows[0];
+    } catch (err) {
+      throw new DatabaseQueryException(
+        `Failed to get author profile with id: ${authorID}`,
+        err,
+      );
     } finally {
       client.release();
     }

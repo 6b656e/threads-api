@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import { IThreadRepository } from 'src/application/ports/repositories/IThreadRepository';
 import { Thread } from 'src/domain/entities/Thread';
+import { DatabaseQueryException } from 'src/infrastructure/exceptions/DatabaseQueryException';
 
 export class PgThreadRepository implements IThreadRepository {
   constructor(private readonly pool: Pool) {}
@@ -8,7 +9,7 @@ export class PgThreadRepository implements IThreadRepository {
   async save(thread: Thread): Promise<void> {
     const client = await this.pool.connect();
     try {
-      await this.pool.query({
+      await client.query({
         text: `
           INSERT INTO threads (
             id,
@@ -20,6 +21,8 @@ export class PgThreadRepository implements IThreadRepository {
           UPDATE SET content = $3`,
         values: [thread.id, thread.authorID, thread.content, thread.createdAt],
       });
+    } catch (err) {
+      throw new DatabaseQueryException('Failed to save thread', err);
     } finally {
       client.release();
     }
@@ -28,7 +31,7 @@ export class PgThreadRepository implements IThreadRepository {
   async findByID(id: string): Promise<Thread | null> {
     const client = await this.pool.connect();
     try {
-      const { rowCount, rows } = await this.pool.query<Thread>({
+      const { rowCount, rows } = await client.query<Thread>({
         text: `
           SELECT
             id,
@@ -46,6 +49,8 @@ export class PgThreadRepository implements IThreadRepository {
         content: rows[0].content,
         createdAt: rows[0].createdAt,
       });
+    } catch (err) {
+      throw new DatabaseQueryException(`Failed to find thread with id: ${id}`, err);
     } finally {
       client.release();
     }

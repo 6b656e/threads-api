@@ -4,6 +4,7 @@ import { AuthorTimelineDTO } from 'src/application/ports/query-services/dtos/Aut
 import { ReplyDTO } from 'src/application/ports/query-services/dtos/ReplyDTO';
 import { ThreadDTO } from 'src/application/ports/query-services/dtos/ThreadDTO';
 import { IAuthorTimelineQS } from 'src/application/ports/query-services/IAuthorTimelineQS';
+import { DatabaseQueryException } from 'src/infrastructure/exceptions/DatabaseQueryException';
 
 export class PgAuthorTimelineQS implements IAuthorTimelineQS {
   constructor(private readonly pool: Pool) {}
@@ -59,6 +60,11 @@ export class PgAuthorTimelineQS implements IAuthorTimelineQS {
         threads: threads.rows,
         authors: authors.rows,
       };
+    } catch (err) {
+      throw new DatabaseQueryException(
+        `Failed to get author timeline with id: ${authorID}`,
+        err,
+      );
     } finally {
       client.release();
     }
