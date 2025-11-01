@@ -11,10 +11,6 @@ export class RedisCacheService implements ICacheService {
       this.isConnected = true;
     });
 
-    this.redisClient.on('error', () => {
-      this.isConnected = false;
-    });
-
     this.redisClient.on('end', () => {
       this.isConnected = false;
     });

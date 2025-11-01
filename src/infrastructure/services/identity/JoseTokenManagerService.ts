@@ -2,7 +2,6 @@ import { jwtVerify, SignJWT } from 'jose';
 import { ICacheService } from 'src/application/ports/services/caching/ICacheService';
 import { IHasherService } from 'src/application/ports/services/identity/IHasherService';
 import { ITokenManagerService } from 'src/application/ports/services/identity/ITokenManagerService';
-import { User } from 'src/domain/entities/User';
 
 export class JoseTokenManagerService implements ITokenManagerService {
   private readonly TOKEN_BLACKLIST_PREFIX = 'blacklist:token';
@@ -14,9 +13,13 @@ export class JoseTokenManagerService implements ITokenManagerService {
     private readonly hasherService: IHasherService,
   ) {}
 
-  async generate(payload: Pick<User, 'id'>): Promise<string> {
+  async generate(
+    sub: string,
+    payload?: Record<string, string | number>,
+  ): Promise<string> {
     const alg = 'HS256';
-    const accessToken = await new SignJWT({ sub: payload.id })
+    const accessToken = await new SignJWT(payload)
+      .setSubject(sub)
       .setProtectedHeader({ alg })
       .setIssuedAt()
       .setExpirationTime(this.jwtExpirationTime)
@@ -24,12 +27,9 @@ export class JoseTokenManagerService implements ITokenManagerService {
     return accessToken;
   }
 
-  async verify(token: string): Promise<Pick<User, 'id'> & { expiresAt: Date }> {
+  async verify(token: string): Promise<Record<string, unknown>> {
     const result = await jwtVerify(token, new TextEncoder().encode(this.jwtSecret));
-    return {
-      id: result.payload.sub!,
-      expiresAt: new Date(result.payload.exp!),
-    };
+    return result.payload;
   }
 
   async blacklist(token: string, userID: string, expiresAt: Date): Promise<void> {

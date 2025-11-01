@@ -8,6 +8,9 @@ export class LogoutUserUsecase {
   async execute(request: LogoutUserRequest): Promise<void> {
     validate(LogoutUserSchema, request);
 
+    const isBlacklisted = await this.tokenManager.isBlacklisted(request.accessToken);
+    if (isBlacklisted) return;
+
     await this.tokenManager.blacklist(
       request.accessToken,
       request.userID,
