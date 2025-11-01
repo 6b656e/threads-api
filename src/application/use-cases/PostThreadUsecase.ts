@@ -19,9 +19,9 @@ export class PostThreadUsecase {
   async execute(request: PostThreadRequest): Promise<PostThreadResponse> {
     validate(PostThreadSchema, request);
 
-    const user = await this.userRepo.findByID(request.userID);
-    if (!user) {
-      throw new NotFoundException('USER_NOT_FOUND_ERROR', 'User', 'ID', request.userID);
+    const author = await this.userRepo.findByID(request.authorID);
+    if (!author) {
+      throw new NotFoundException('USER_NOT_FOUND_ERROR', 'User', 'ID', request.authorID);
     }
 
     const id = nanoid();
@@ -29,7 +29,7 @@ export class PostThreadUsecase {
     await this.threadRepo.save(
       Thread.create({
         id,
-        authorID: request.userID,
+        authorID: request.authorID,
         content: request.content,
       }),
     );
@@ -37,3 +37,5 @@ export class PostThreadUsecase {
     return { id };
   }
 }
+
+export const POST_THREAD_USECASE_TOKEN = Symbol(PostThreadUsecase.name);

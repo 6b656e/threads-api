@@ -1,5 +1,4 @@
 import { validate } from '../commons/validation';
-import { NotFoundException } from '../exceptions/NotFoundException';
 import { AuthorTimelineDTO } from '../ports/query-services/dtos/AuthorTimelineDTO';
 import { IAuthorTimelineQS } from '../ports/query-services/IAuthorTimelineQS';
 import {
@@ -16,10 +15,9 @@ export class GetAuthorTimelineUsecase {
     const authorTimeline = await this.authorTimelineQS.getAuthorTimeline(
       request.authorID,
     );
-    if (!authorTimeline) {
-      throw new NotFoundException('USER_NOT_FOUND_ERROR', 'User', 'ID', request.authorID);
-    }
 
     return authorTimeline;
   }
 }
+
+export const AUTHOR_TIMELINE_USECASE_TOKEN = Symbol(GetAuthorTimelineUsecase.name);

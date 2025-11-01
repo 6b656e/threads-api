@@ -9,7 +9,7 @@ import { DatabaseQueryException } from 'src/infrastructure/exceptions/DatabaseQu
 export class PgAuthorTimelineQS implements IAuthorTimelineQS {
   constructor(private readonly pool: Pool) {}
 
-  async getAuthorTimeline(authorID: string): Promise<AuthorTimelineDTO | null> {
+  async getAuthorTimeline(authorID: string): Promise<AuthorTimelineDTO> {
     const client = await this.pool.connect();
     try {
       const repliesQuery = `
@@ -41,20 +41,19 @@ export class PgAuthorTimelineQS implements IAuthorTimelineQS {
         ORDER BY t.created_at DESC`;
 
       const authorsQuery = `
-        SELECT DISTINCT id, username
-        FROM users
+        SELECT DISTINCT u.id, u.username
+        FROM users u
+        LEFT JOIN threads t ON t.author_id = u.id
+        LEFT JOIN replies r ON r.thread_id = t.id
         WHERE
-          id = 'user_003' OR
-          id IN (
-            SELECT author_id FROM threads
-            WHERE id IN (SELECT thread_id FROM replies WHERE author_id = 'user_003'))`;
+          t.author_id = $1 OR
+          r.author_id = $1`;
 
       const [replies, threads, authors] = await Promise.all([
         client.query<ReplyDTO>(repliesQuery, [authorID]),
         client.query<ThreadDTO>(threadsQuery, [authorID]),
         client.query<AuthorDTO>(authorsQuery, [authorID]),
       ]);
-      if (!authors.rowCount) return null;
       return {
         replies: replies.rows,
         threads: threads.rows,

@@ -19,7 +19,7 @@ import {
 } from 'src/application/use-cases/GetAuthorProfileUsecase';
 import { AUTHOR_PROFILE_QUERY_TOKEN } from 'src/application/ports/query-services/IAuthorProfileQS';
 import { IAuthorProfileQS } from 'src/application/ports/query-services/IAuthorProfileQS';
-import { SharedModule } from './shared.module';
+import { SharedModule } from './SharedModule';
 import { AuthController } from 'src/presentation/controllers/AuthController';
 import {
   LOGOUT_USER_USECASE_TOKEN,

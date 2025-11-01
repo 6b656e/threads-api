@@ -1,7 +1,7 @@
 import * as z from 'zod';
 
 export const PostThreadSchema = z.object({
-  userID: z.nanoid(),
+  authorID: z.nanoid(),
   content: z.string(),
 });
 

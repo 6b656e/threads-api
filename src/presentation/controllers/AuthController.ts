@@ -44,15 +44,15 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async postAuthRegister(@Body() request: RegisterUserRequest) {
-    await this.registerUserUsecase.execute(request);
+  async postAuthRegister(@Body() body: RegisterUserRequest) {
+    await this.registerUserUsecase.execute(body);
     return { message: 'User registered successfully' };
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async postAuthLogin(@Body() request: LoginUserRequest) {
-    const data = await this.loginUserUsecase.execute(request);
+  async postAuthLogin(@Body() body: LoginUserRequest) {
+    const data = await this.loginUserUsecase.execute(body);
     return { data };
   }
 
@@ -64,8 +64,10 @@ export class AuthController {
       authorID: payload.sub,
     });
     return {
-      ...data,
-      createdAt: data.createdAt.toString(),
+      data: {
+        ...data,
+        createdAt: data.createdAt.toString(),
+      },
     };
   }
 

@@ -3,8 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { AppConfigSchema } from '../commons/AppConfig';
 import { APP_FILTER } from '@nestjs/core';
 import { GlobalExceptionFilter } from 'src/presentation/filters/GlobalExceptionFilter';
-import { AuthModule } from './auth.module';
+import { AuthModule } from './AuthModule';
 import { RequestLoggerMiddleware } from 'src/presentation/middlewares/RequestLoggerMiddleware';
+import { UserModule } from './UserModule';
+import { ThreadModule } from './ThreadModule';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { RequestLoggerMiddleware } from 'src/presentation/middlewares/RequestLog
       isGlobal: true,
     }),
     AuthModule,
+    UserModule,
+    ThreadModule,
   ],
   providers: [
     {

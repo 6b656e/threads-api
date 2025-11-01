@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './infrastructure/modules/app.module';
+import { AppModule } from './infrastructure/modules/AppModule';
 import { ConfigService } from '@nestjs/config';
 import { AppConfig } from './infrastructure/commons/AppConfig';
 
