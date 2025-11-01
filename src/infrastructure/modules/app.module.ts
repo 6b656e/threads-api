@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppConfigSchema } from '../commons/AppConfig';
 import { APP_FILTER } from '@nestjs/core';
-import { CatchEverythingFilter } from 'src/presentation/filters/CatchEverythingFilter';
+import { GlobalExceptionFilter } from 'src/presentation/filters/GlobalExceptionFilter';
 import { AuthModule } from './auth.module';
+import { RequestLoggerMiddleware } from 'src/presentation/middlewares/RequestLoggerMiddleware';
 
 @Module({
   imports: [
@@ -18,8 +19,12 @@ import { AuthModule } from './auth.module';
   providers: [
     {
       provide: APP_FILTER,
-      useClass: CatchEverythingFilter,
+      useClass: GlobalExceptionFilter,
     },
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestLoggerMiddleware).forRoutes('/');
+  }
+}
