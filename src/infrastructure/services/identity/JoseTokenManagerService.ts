@@ -1,10 +1,10 @@
 import { jwtVerify, SignJWT } from 'jose';
-import { ICacheService } from 'src/application/ports/services/ICacheService';
-import { IHasherService } from 'src/application/ports/services/IHasherService';
-import { ITokenManager } from 'src/application/ports/services/ITokenManager';
+import { ICacheService } from 'src/application/ports/services/caching/ICacheService';
+import { IHasherService } from 'src/application/ports/services/identity/IHasherService';
+import { ITokenManagerService } from 'src/application/ports/services/identity/ITokenManagerService';
 import { User } from 'src/domain/entities/User';
 
-export class JoseTokenManager implements ITokenManager {
+export class JoseTokenManagerService implements ITokenManagerService {
   private readonly TOKEN_BLACKLIST_PREFIX = 'blacklist:token';
 
   constructor(

@@ -2,14 +2,14 @@ import { nanoid } from 'nanoid';
 import { validate } from '../commons/validation';
 import { DuplicationException } from '../exceptions/DuplicationException';
 import { IUserRepository } from '../ports/repositories/IUserRepository';
-import { IHasherService } from '../ports/services/IHasherService';
+import { IHasherService } from '../ports/services/identity/IHasherService';
 import { RegisterUserRequest, RegisterUserSchema } from './dtos/RegisterUserDTO';
 import { User } from 'src/domain/entities/User';
 
 export class RegisterUserUsecase {
   constructor(
     private readonly userRepo: IUserRepository,
-    private readonly passwordHasher: IHasherService,
+    private readonly hasherService: IHasherService,
   ) {}
 
   async execute(request: RegisterUserRequest): Promise<void> {
@@ -25,7 +25,7 @@ export class RegisterUserUsecase {
       );
     }
 
-    const hashedPassword = await this.passwordHasher.hash(request.password);
+    const hashedPassword = await this.hasherService.hash(request.password);
 
     await this.userRepo.save(
       User.create({
@@ -36,3 +36,5 @@ export class RegisterUserUsecase {
     );
   }
 }
+
+export const REGISTER_USER_USECASE_TOKEN = Symbol(RegisterUserUsecase.name);

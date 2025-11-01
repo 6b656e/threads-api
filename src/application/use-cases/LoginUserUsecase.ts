@@ -6,14 +6,14 @@ import {
   LoginUserSchema,
 } from './dtos/LoginUserDTO';
 import { InvalidCredentialsException } from '../exceptions/InvalidCredentials';
-import { IHasherService } from '../ports/services/IHasherService';
-import { ITokenManager } from '../ports/services/ITokenManager';
+import { IHasherService } from '../ports/services/identity/IHasherService';
+import { ITokenManagerService } from '../ports/services/identity/ITokenManagerService';
 
 export class LoginUserUsecase {
   constructor(
     private readonly userRepo: IUserRepository,
     private readonly hasherService: IHasherService,
-    private readonly tokenManager: ITokenManager,
+    private readonly tokenManagerService: ITokenManagerService,
   ) {}
 
   async execute(request: LoginUserRequest): Promise<LoginUserResponse> {
@@ -39,8 +39,10 @@ export class LoginUserUsecase {
     }
 
     const tokenPayload = { id: user.id };
-    const accessToken = await this.tokenManager.generate(tokenPayload);
+    const accessToken = await this.tokenManagerService.generate(tokenPayload);
 
     return { accessToken };
   }
 }
+
+export const LOGIN_USER_USECASE_TOKEN = Symbol(LoginUserUsecase.name);

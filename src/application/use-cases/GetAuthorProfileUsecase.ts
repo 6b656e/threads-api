@@ -21,3 +21,5 @@ export class GetAuthorProfileUsecase {
     return authorProfile;
   }
 }
+
+export const AUTHOR_PROFILE_USECASE_TOKEN = Symbol(GetAuthorProfileUsecase.name);

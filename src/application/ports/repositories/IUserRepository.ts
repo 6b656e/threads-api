@@ -5,3 +5,5 @@ export interface IUserRepository {
   findByID(id: string): Promise<User | null>;
   findByCredentials(username: string): Promise<User | null>;
 }
+
+export const USER_REPOSITORY_TOKEN = Symbol('UserRepository');

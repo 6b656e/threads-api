@@ -1,5 +1,5 @@
 import { scrypt } from 'node:crypto';
-import { IHasherService } from 'src/application/ports/services/IHasherService';
+import { IHasherService } from 'src/application/ports/services/identity/IHasherService';
 
 export class ScryptHasherService implements IHasherService {
   constructor(private readonly salt: string) {}

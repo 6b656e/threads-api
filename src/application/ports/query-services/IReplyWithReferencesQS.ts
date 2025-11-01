@@ -6,3 +6,5 @@ export interface IReplyWithReferencesQS {
     replyID: string,
   ): Promise<ReplyWithReferencesDTO | null>;
 }
+
+export const REPLY_WITH_REF_QUERY_TOKEN = Symbol('ReplyWithReferencesQS');

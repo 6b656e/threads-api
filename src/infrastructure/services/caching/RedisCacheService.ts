@@ -1,5 +1,5 @@
 import { RedisClientType } from 'redis';
-import { ICacheService } from 'src/application/ports/services/ICacheService';
+import { ICacheService } from 'src/application/ports/services/caching/ICacheService';
 import { CacheConnectionException } from 'src/infrastructure/exceptions/CacheConnectionException';
 import { CacheQueryException } from 'src/infrastructure/exceptions/CacheQueryException';
 
