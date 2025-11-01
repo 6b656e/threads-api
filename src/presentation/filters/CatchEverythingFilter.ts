@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { DuplicationException } from 'src/application/exceptions/DuplicationException';
@@ -12,9 +13,12 @@ import { InvalidCredentialsException } from 'src/application/exceptions/InvalidC
 import { NotFoundException } from 'src/application/exceptions/NotFoundException';
 import { ValidationException } from 'src/application/exceptions/ValidationException';
 import { InvalidArgumentException } from 'src/domain/exceptions/InvalidArgumentException';
+import { InfrastructureException } from 'src/infrastructure/exceptions/InfrastructureException';
 
 @Catch()
 export class CatchEverythingFilter implements ExceptionFilter {
+  private readonly logger = new Logger(CatchEverythingFilter.name);
+
   constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -64,7 +68,6 @@ export class CatchEverythingFilter implements ExceptionFilter {
       };
     }
 
-    // Domain Exception
     if (exception instanceof InvalidArgumentException) {
       return {
         status: HttpStatus.BAD_REQUEST,
@@ -73,7 +76,6 @@ export class CatchEverythingFilter implements ExceptionFilter {
       };
     }
 
-    // Application Exception
     if (exception instanceof DuplicationException) {
       return {
         status: HttpStatus.CONFLICT,
@@ -101,9 +103,16 @@ export class CatchEverythingFilter implements ExceptionFilter {
       };
     }
 
-    // Infra Exception
-    // if (exception instanceof InfrastructureException) {
-    // }
+    if (exception instanceof Error) {
+      if (
+        exception instanceof InfrastructureException &&
+        exception.cause instanceof Error
+      ) {
+        this.logger.error(exception.message, exception.cause.stack, exception.errorCode);
+      }
+
+      this.logger.error(exception.message, exception.stack, exception.name);
+    }
 
     return {
       status: HttpStatus.INTERNAL_SERVER_ERROR,

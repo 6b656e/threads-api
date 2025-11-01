@@ -44,8 +44,6 @@ export class RedisCacheService implements ICacheService {
         'Failed to disconnect from Redis',
         err,
       );
-    } finally {
-      this.redisClient.destroy();
     }
   }
 
