@@ -13,6 +13,14 @@ import {
   IUserRepository,
   USER_REPOSITORY_TOKEN,
 } from 'src/application/ports/repositories/IUserRepository';
+import {
+  REPLY_THREAD_USECASE_TOKEN,
+  ReplyThreadUsecase,
+} from 'src/application/use-cases/ReplyThreadUsecase';
+import {
+  IReplyRepository,
+  REPLY_REPOSITORY_TOKEN,
+} from 'src/application/ports/repositories/IReplyRepository';
 
 @Module({
   imports: [SharedModule],
@@ -24,6 +32,17 @@ import {
         return new PostThreadUsecase(threadRepo, userRepo);
       },
       inject: [THREAD_REPOSITORY_TOKEN, USER_REPOSITORY_TOKEN],
+    },
+    {
+      provide: REPLY_THREAD_USECASE_TOKEN,
+      useFactory(
+        userRepo: IUserRepository,
+        threadRepo: IThreadRepository,
+        replyRepo: IReplyRepository,
+      ) {
+        return new ReplyThreadUsecase(userRepo, threadRepo, replyRepo);
+      },
+      inject: [USER_REPOSITORY_TOKEN, THREAD_REPOSITORY_TOKEN, REPLY_REPOSITORY_TOKEN],
     },
   ],
 })

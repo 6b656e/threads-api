@@ -43,11 +43,20 @@ export class PgAuthorTimelineQS implements IAuthorTimelineQS {
       const authorsQuery = `
         SELECT DISTINCT u.id, u.username
         FROM users u
-        LEFT JOIN threads t ON t.author_id = u.id
-        LEFT JOIN replies r ON r.thread_id = t.id
+        LEFT JOIN threads t ON
+            t.author_id = u.id AND
+            t.author_id = $1
+        LEFT JOIN replies r ON
+            r.author_id = u.id AND
+            r.author_id = $1
+        LEFT JOIN replies r2 ON r2.author_id = $1
+        LEFT JOIN threads replied_to_threads ON
+            replied_to_threads.id = r2.thread_id AND
+            replied_to_threads.author_id = u.id
         WHERE
-          t.author_id = $1 OR
-          r.author_id = $1`;
+          t.id IS NOT NULL OR
+          r.id IS NOT NULL OR
+          replied_to_threads.id IS NOT NULL`;
 
       const [replies, threads, authors] = await Promise.all([
         client.query<ReplyDTO>(repliesQuery, [authorID]),

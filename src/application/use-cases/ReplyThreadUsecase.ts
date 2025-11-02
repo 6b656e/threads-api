@@ -52,3 +52,5 @@ export class ReplyThreadUsecase {
     return { id };
   }
 }
+
+export const REPLY_THREAD_USECASE_TOKEN = Symbol(ReplyThreadUsecase.name);

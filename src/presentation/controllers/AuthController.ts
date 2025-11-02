@@ -52,21 +52,28 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async postAuthLogin(@Body() body: LoginUserRequest) {
-    const data = await this.loginUserUsecase.execute(body);
-    return { data };
+    const result = await this.loginUserUsecase.execute(body);
+    return {
+      data: {
+        access_token: result.accessToken,
+      },
+    };
   }
 
   @UseGuards(AuthGuard)
   @Get('me')
   @HttpCode(HttpStatus.OK)
   async getAuthMe(@TokenPayload() payload: Payload) {
-    const data = await this.getAuthorProfileUsecase.execute({
+    const result = await this.getAuthorProfileUsecase.execute({
       authorID: payload.sub,
     });
     return {
       data: {
-        ...data,
-        createdAt: data.createdAt.toString(),
+        id: result.id,
+        username: result.username,
+        thread_count: result.threadCount,
+        reply_count: result.replyCount,
+        createdAt: result.createdAt.toISOString(),
       },
     };
   }
