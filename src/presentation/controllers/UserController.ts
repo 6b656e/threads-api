@@ -50,7 +50,7 @@ export class UserController {
     return {
       data: allData,
       includes: {
-        referenced_threads: refThreads,
+        threads: refThreads,
         users,
       },
     };

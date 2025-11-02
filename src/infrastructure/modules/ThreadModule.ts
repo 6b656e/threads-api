@@ -25,8 +25,18 @@ import {
   GetThreadUsecase,
   THREAD_DETAIL_USECASE_TOKEN,
 } from 'src/application/use-cases/GetThreadUsecase';
-import { THREAD_WITH_REF_QUERY_TOKEN } from 'src/application/ports/query-services/IThreadWithReferencesQS';
-import { IThreadWithReferencesQS } from 'src/application/ports/query-services/IThreadWithReferencesQS';
+import {
+  IThreadWithReferencesQS,
+  THREAD_WITH_REF_QUERY_TOKEN,
+} from 'src/application/ports/query-services/IThreadWithReferencesQS';
+import {
+  GetReplyUsecase,
+  REPLY_DETAIL_USECASE_TOKEN,
+} from 'src/application/use-cases/GetReplyUsecase';
+import {
+  IReplyWithReferencesQS,
+  REPLY_WITH_REF_QUERY_TOKEN,
+} from 'src/application/ports/query-services/IReplyWithReferencesQS';
 
 @Module({
   imports: [SharedModule],
@@ -56,6 +66,13 @@ import { IThreadWithReferencesQS } from 'src/application/ports/query-services/IT
         return new ReplyThreadUsecase(userRepo, threadRepo, replyRepo);
       },
       inject: [USER_REPOSITORY_TOKEN, THREAD_REPOSITORY_TOKEN, REPLY_REPOSITORY_TOKEN],
+    },
+    {
+      provide: REPLY_DETAIL_USECASE_TOKEN,
+      useFactory(replyWithReferencesQS: IReplyWithReferencesQS) {
+        return new GetReplyUsecase(replyWithReferencesQS);
+      },
+      inject: [REPLY_WITH_REF_QUERY_TOKEN],
     },
   ],
 })

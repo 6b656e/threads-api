@@ -5,8 +5,10 @@ import {
   AUTHOR_TIMELINE_USECASE_TOKEN,
   GetAuthorTimelineUsecase,
 } from 'src/application/use-cases/GetAuthorTimelineUsecase';
-import { AUTHOR_TIMELINE_QUERY_TOKEN } from 'src/application/ports/query-services/IAuthorTimelineQS';
-import { IAuthorTimelineQS } from 'src/application/ports/query-services/IAuthorTimelineQS';
+import {
+  IAuthorTimelineQS,
+  AUTHOR_TIMELINE_QUERY_TOKEN,
+} from 'src/application/ports/query-services/IAuthorTimelineQS';
 
 @Module({
   imports: [SharedModule],
