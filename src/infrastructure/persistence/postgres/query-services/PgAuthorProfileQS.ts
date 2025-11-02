@@ -14,8 +14,8 @@ export class PgAuthorProfileQS implements IAuthorProfileQS {
           SELECT
             u.id,
             u.username,
-            COALESCE(COUNT(DISTINCT r.id), 0) AS "replyCount",
-            COALESCE(COUNT(DISTINCT t.id), 0) AS "threadCount",
+            COALESCE(COUNT(DISTINCT r.id), 0)::int AS "replyCount",
+            COALESCE(COUNT(DISTINCT t.id), 0)::int AS "threadCount",
             u.created_at AS "createdAt"
           FROM users u
           LEFT JOIN threads t ON t.author_id = u.id

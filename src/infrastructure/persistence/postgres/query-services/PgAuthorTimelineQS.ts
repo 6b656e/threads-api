@@ -30,7 +30,7 @@ export class PgAuthorTimelineQS implements IAuthorTimelineQS {
           t.content,
           (SELECT COUNT(*)
            FROM replies
-           WHERE thread_id = t.id) AS "replyCount",
+           WHERE thread_id = t.id)::int AS "replyCount",
           t.created_at AS "createdAt"
         FROM threads t
         WHERE

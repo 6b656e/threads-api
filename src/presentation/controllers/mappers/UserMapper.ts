@@ -19,7 +19,7 @@ export class UserMapper {
       username: profile.username,
       thread_count: profile.threadCount,
       reply_count: profile.replyCount,
-      createdAt: profile.createdAt.toISOString(),
+      created_at: profile.createdAt.toISOString(),
     };
   }
 }

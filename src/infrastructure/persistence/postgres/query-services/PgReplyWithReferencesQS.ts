@@ -33,7 +33,7 @@ export class PgReplyWithReferencesQS implements IReplyWithReferencesQS {
           t.author_id AS "authorID",
           t.content,
           t.created_at AS "createdAt",
-          COUNT(r.id) AS "replyCount"
+          COUNT(r.id)::int AS "replyCount"
         FROM threads t
         LEFT JOIN replies r ON r.thread_id = t.id
         WHERE t.id = $1
