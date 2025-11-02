@@ -26,3 +26,5 @@ export class GetReplyUsecase {
     return replyWithRefs;
   }
 }
+
+export const REPLY_DETAIL_USECASE_TOKEN = Symbol(GetReplyUsecase.name);

@@ -21,6 +21,12 @@ import {
   IReplyRepository,
   REPLY_REPOSITORY_TOKEN,
 } from 'src/application/ports/repositories/IReplyRepository';
+import {
+  GetThreadUsecase,
+  THREAD_DETAIL_USECASE_TOKEN,
+} from 'src/application/use-cases/GetThreadUsecase';
+import { THREAD_WITH_REF_QUERY_TOKEN } from 'src/application/ports/query-services/IThreadWithReferencesQS';
+import { IThreadWithReferencesQS } from 'src/application/ports/query-services/IThreadWithReferencesQS';
 
 @Module({
   imports: [SharedModule],
@@ -32,6 +38,13 @@ import {
         return new PostThreadUsecase(threadRepo, userRepo);
       },
       inject: [THREAD_REPOSITORY_TOKEN, USER_REPOSITORY_TOKEN],
+    },
+    {
+      provide: THREAD_DETAIL_USECASE_TOKEN,
+      useFactory(threadWithReferencesQS: IThreadWithReferencesQS) {
+        return new GetThreadUsecase(threadWithReferencesQS);
+      },
+      inject: [THREAD_WITH_REF_QUERY_TOKEN],
     },
     {
       provide: REPLY_THREAD_USECASE_TOKEN,

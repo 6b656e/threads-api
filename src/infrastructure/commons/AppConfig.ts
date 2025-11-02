@@ -3,13 +3,9 @@ import { z } from 'zod';
 export const AppConfigSchema = z.object({
   APP_PORT: z.coerce.number().default(3000),
 
-  POSTGRES_HOST: z.string().default('127.0.0.1'),
-  POSTGRES_PORT: z.coerce.number().default(5432),
-  POSTGRES_USER: z.string().default('postgres'),
-  POSTGRES_PASSWORD: z.string(),
-  POSTGRES_DATABASE: z.string().default('postgres'),
+  DATABASE_URL: z.string(),
 
-  REDIS_URL: z.string().default('redis://127.0.0.1:6379'),
+  REDIS_URL: z.string(),
 
   PASSWORD_HASH_SALT: z.string().min(20),
 

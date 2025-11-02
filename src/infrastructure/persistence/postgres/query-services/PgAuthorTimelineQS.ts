@@ -26,18 +26,21 @@ export class PgAuthorTimelineQS implements IAuthorTimelineQS {
       const threadsQuery = `
         SELECT
           t.id,
-          t.author_id as "authorID",
+          t.author_id AS "authorID",
           t.content,
-          COALESCE(rc.reply_count, 0) as "replyCount",
-          t.created_at as "createdAt"
+          (SELECT COUNT(*)
+           FROM replies
+           WHERE thread_id = t.id) AS "replyCount",
+          t.created_at AS "createdAt"
         FROM threads t
-        LEFT JOIN (
-          SELECT thread_id, COUNT(*) as reply_count
-          FROM replies
-          GROUP BY thread_id) rc ON rc.thread_id = t.id
         WHERE
           t.author_id = $1 OR
-          t.id IN (SELECT DISTINCT thread_id FROM replies WHERE author_id = $1)
+          EXISTS (
+            SELECT 1
+            FROM replies
+            WHERE
+                thread_id = t.id AND
+                author_id = $1)
         ORDER BY t.created_at DESC`;
 
       const authorsQuery = `

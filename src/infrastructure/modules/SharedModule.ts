@@ -32,12 +32,8 @@ export const REDIS_CONNECTION_TOKEN = Symbol('REDIS_CONNECTION');
     {
       provide: POSTGRES_CONNECTION_TOKEN,
       useFactory(config: ConfigService<AppConfig, true>) {
-        const host = config.get('POSTGRES_HOST', { infer: true });
-        const port = config.get('POSTGRES_PORT', { infer: true });
-        const user = config.get('POSTGRES_USER', { infer: true });
-        const password = config.get('POSTGRES_PASSWORD', { infer: true });
-        const database = config.get('POSTGRES_DATABASE', { infer: true });
-        return new Pool({ host, port, user, password, database });
+        const connectionString = config.get('DATABASE_URL', { infer: true });
+        return new Pool({ connectionString });
       },
       inject: [ConfigService],
     },

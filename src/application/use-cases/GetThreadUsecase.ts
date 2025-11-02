@@ -25,3 +25,5 @@ export class GetThreadUsecase {
     return threadWithRefs;
   }
 }
+
+export const THREAD_DETAIL_USECASE_TOKEN = Symbol(GetThreadUsecase.name);
