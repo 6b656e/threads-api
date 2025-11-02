@@ -28,6 +28,7 @@ import {
   LOGOUT_USER_USECASE_TOKEN,
   LogoutUserUsecase,
 } from 'src/application/use-cases/LogoutUserUsecase';
+import { UserMapper } from './mappers/UserMapper';
 
 @Controller('auth')
 export class AuthController {
@@ -53,29 +54,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async postAuthLogin(@Body() body: LoginUserRequest) {
     const result = await this.loginUserUsecase.execute(body);
-    return {
-      data: {
-        access_token: result.accessToken,
-      },
-    };
+    return { data: { access_token: result.accessToken } };
   }
 
   @UseGuards(AuthGuard)
   @Get('me')
   @HttpCode(HttpStatus.OK)
   async getAuthMe(@TokenPayload() payload: Payload) {
-    const result = await this.getAuthorProfileUsecase.execute({
-      authorID: payload.sub,
-    });
-    return {
-      data: {
-        id: result.id,
-        username: result.username,
-        thread_count: result.threadCount,
-        reply_count: result.replyCount,
-        createdAt: result.createdAt.toISOString(),
-      },
-    };
+    const result = await this.getAuthorProfileUsecase.execute({ authorID: payload.sub });
+    return { data: UserMapper.toProfileResponse(result) };
   }
 
   @UseGuards(AuthGuard)

@@ -29,6 +29,9 @@ import {
   GetReplyUsecase,
   REPLY_DETAIL_USECASE_TOKEN,
 } from 'src/application/use-cases/GetReplyUsecase';
+import { ThreadMapper } from './mappers/ThreadMapper';
+import { UserMapper } from './mappers/UserMapper';
+import { ReplyMapper } from './mappers/ReplyMapper';
 
 @Controller('threads')
 export class ThreadController {
@@ -51,31 +54,17 @@ export class ThreadController {
       ...body,
       authorID: payload.sub,
     });
-    return {
-      data: {
-        id: result.id,
-      },
-    };
+    return { data: { id: result.id } };
   }
 
   @Get(':thread_id')
   @HttpCode(HttpStatus.CREATED)
   async getThreads(@Param('thread_id') threadID: string) {
-    const result = await this.getThreadUsecase.execute({
-      threadID,
-    });
+    const result = await this.getThreadUsecase.execute({ threadID });
     return {
-      data: {
-        id: result.thread.id,
-        author_id: result.thread.authorID,
-        content: result.thread.content,
-        created_at: result.thread.createdAt.toISOString(),
-        public_metrics: {
-          reply_count: result.thread.replyCount,
-        },
-      },
+      data: ThreadMapper.toResponse(result.thread),
       includes: {
-        users: [result.author],
+        users: [UserMapper.toResponse(result.author)],
       },
     };
   }
@@ -93,11 +82,7 @@ export class ThreadController {
       threadID,
       authorID: payload.sub,
     });
-    return {
-      data: {
-        id: result.id,
-      },
-    };
+    return { data: { id: result.id } };
   }
 
   @Get(':thread_id/replies/:reply_id')
@@ -106,36 +91,12 @@ export class ThreadController {
     @Param('thread_id') threadID: string,
     @Param('reply_id') replyID: string,
   ) {
-    const result = await this.getReplyUsecase.execute({
-      threadID,
-      replyID,
-    });
+    const result = await this.getReplyUsecase.execute({ threadID, replyID });
     return {
-      data: {
-        id: result.reply.id,
-        author_id: result.reply.authorID,
-        text: result.reply.content,
-        created_at: result.reply.createdAt.toISOString(),
-        referenced_threads: [
-          {
-            type: 'replied_to',
-            id: result.reply.threadID,
-          },
-        ],
-      },
+      data: ReplyMapper.toResponse(result.reply),
       includes: {
-        threads: [
-          {
-            id: result.thread.id,
-            author_id: result.thread.authorID,
-            text: result.thread.content,
-            created_at: result.thread.createdAt.toISOString(),
-            public_metrics: {
-              reply_count: result.thread.replyCount,
-            },
-          },
-        ],
-        users: result.authors,
+        threads: [ThreadMapper.toResponse(result.thread)],
+        users: [UserMapper.toResponseList(result.authors)],
       },
     };
   }
