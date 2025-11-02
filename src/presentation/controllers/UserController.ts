@@ -15,6 +15,7 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   async getUsersIDTimeline(@Param('author_id') authorID: string) {
     const result = await this.getAuthorTimelineUsecase.execute({ authorID });
+    // return result;
     const transformedThreads = result.threads.map((thread) => ({
       id: thread.id,
       author_id: thread.authorID,
@@ -37,7 +38,7 @@ export class UserController {
       ],
     }));
     const allData = [
-      ...transformedThreads.filter((t) => t.id === authorID),
+      ...transformedThreads.filter((t) => t.author_id === authorID),
       ...transformedReplies,
     ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     const refThreadIDs = new Set(result.replies.map((reply) => reply.threadID));
