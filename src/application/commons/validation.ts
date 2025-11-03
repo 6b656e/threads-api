@@ -9,6 +9,8 @@ export function validate<T extends z.ZodObject<any>>(schema: T, value: unknown) 
     const errors = { ...parseFormErrors(formErrors), ...removeUndefined(fieldErrors) };
     throw new ValidationException('INVALID_INPUT_REQUEST_ERROR', 'Input invalid', errors);
   }
+
+  return result.data;
 }
 
 function parseFormErrors(errors: string[]): Record<string, string[]> {

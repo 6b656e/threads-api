@@ -8,17 +8,17 @@ export class GetThreadUsecase {
   constructor(private readonly threadWithReferencesQS: IThreadWithReferencesQS) {}
 
   async execute(request: GetThreadRequest): Promise<ThreadWithReferencesDTO> {
-    validate(GetThreadSchema, request);
+    const data = validate(GetThreadSchema, request);
 
     const threadWithRefs = await this.threadWithReferencesQS.getThreadWithReferences(
-      request.threadID,
+      data.threadID,
     );
     if (!threadWithRefs) {
       throw new NotFoundException(
         'THREAD_NOT_FOUND_ERROR',
         'Thread',
         'ID',
-        request.threadID,
+        data.threadID,
       );
     }
 

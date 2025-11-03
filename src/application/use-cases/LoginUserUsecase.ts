@@ -17,9 +17,9 @@ export class LoginUserUsecase {
   ) {}
 
   async execute(request: LoginUserRequest): Promise<LoginUserResponse> {
-    validate(LoginUserSchema, request);
+    const data = validate(LoginUserSchema, request);
 
-    const user = await this.userRepo.findByCredentials(request.username);
+    const user = await this.userRepo.findByCredentials(data.username);
     if (!user) {
       throw new InvalidCredentialsException(
         'USER_INVALID_CREDENTIALS_ERROR',
@@ -28,7 +28,7 @@ export class LoginUserUsecase {
     }
 
     const isValidPassword = await this.hasherService.compare(
-      request.password,
+      data.password,
       user.hashedPassword,
     );
     if (!isValidPassword) {

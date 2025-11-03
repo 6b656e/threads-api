@@ -10,11 +10,9 @@ export class GetAuthorTimelineUsecase {
   constructor(private readonly authorTimelineQS: IAuthorTimelineQS) {}
 
   async execute(request: GetAuthorTimelineRequest): Promise<AuthorTimelineDTO> {
-    validate(GetAuthorTimelineSchema, request);
+    const data = validate(GetAuthorTimelineSchema, request);
 
-    const authorTimeline = await this.authorTimelineQS.getAuthorTimeline(
-      request.authorID,
-    );
+    const authorTimeline = await this.authorTimelineQS.getAuthorTimeline(data.authorID);
 
     return authorTimeline;
   }

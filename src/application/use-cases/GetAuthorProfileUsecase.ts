@@ -11,11 +11,11 @@ export class GetAuthorProfileUsecase {
   constructor(private readonly authorProfileQS: IAuthorProfileQS) {}
 
   async execute(request: GetAuthorProfileRequest): Promise<AuthorProfileDTO> {
-    validate(GetAuthorProfileSchema, request);
+    const data = validate(GetAuthorProfileSchema, request);
 
-    const authorProfile = await this.authorProfileQS.getAuthorProfile(request.authorID);
+    const authorProfile = await this.authorProfileQS.getAuthorProfile(data.authorID);
     if (!authorProfile) {
-      throw new NotFoundException('USER_NOT_FOUND_ERROR', 'User', 'ID', request.authorID);
+      throw new NotFoundException('USER_NOT_FOUND_ERROR', 'User', 'ID', data.authorID);
     }
 
     return authorProfile;

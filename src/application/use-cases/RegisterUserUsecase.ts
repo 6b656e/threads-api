@@ -13,24 +13,24 @@ export class RegisterUserUsecase {
   ) {}
 
   async execute(request: RegisterUserRequest): Promise<void> {
-    validate(RegisterUserSchema, request);
+    const data = validate(RegisterUserSchema, request);
 
-    const user = await this.userRepo.findByCredentials(request.username);
+    const user = await this.userRepo.findByCredentials(data.username);
     if (user) {
       throw new DuplicationException(
         'USER_NAME_ALREADY_TAKEN_ERROR',
         'User',
         'username',
-        request.username,
+        data.username,
       );
     }
 
-    const hashedPassword = await this.hasherService.hash(request.password);
+    const hashedPassword = await this.hasherService.hash(data.password);
 
     await this.userRepo.save(
       User.create({
         id: nanoid(),
-        username: request.username,
+        username: data.username,
         hashedPassword,
       }),
     );

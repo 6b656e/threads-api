@@ -19,22 +19,22 @@ export class ReplyThreadUsecase {
   ) {}
 
   async execute(request: ReplyThreadRequest): Promise<ReplyThreadResponse> {
-    validate(ReplyThreadSchema, request);
+    const data = validate(ReplyThreadSchema, request);
 
     const [author, thread] = await Promise.all([
-      this.userRepo.findByID(request.authorID),
-      this.threadRepo.findByID(request.threadID),
+      this.userRepo.findByID(data.authorID),
+      this.threadRepo.findByID(data.threadID),
     ]);
 
     if (!author) {
-      throw new NotFoundException('USER_NOT_FOUND_ERROR', 'User', 'ID', request.authorID);
+      throw new NotFoundException('USER_NOT_FOUND_ERROR', 'User', 'ID', data.authorID);
     }
     if (!thread) {
       throw new NotFoundException(
         'THREAD_NOT_FOUND_ERROR',
         'Thread',
         'ID',
-        request.threadID,
+        data.threadID,
       );
     }
 
@@ -43,9 +43,9 @@ export class ReplyThreadUsecase {
     await this.replyRepo.save(
       Reply.create({
         id,
-        authorID: request.authorID,
-        threadID: request.threadID,
-        content: request.content,
+        authorID: data.authorID,
+        threadID: data.threadID,
+        content: data.content,
       }),
     );
 

@@ -6,13 +6,9 @@ export class LogoutUserUsecase {
   constructor(private readonly tokenManager: ITokenManagerService) {}
 
   async execute(request: LogoutUserRequest): Promise<void> {
-    validate(LogoutUserSchema, request);
+    const data = validate(LogoutUserSchema, request);
 
-    await this.tokenManager.blacklist(
-      request.accessToken,
-      request.userID,
-      request.tokenExpiresAt,
-    );
+    await this.tokenManager.blacklist(data.accessToken, data.userID, data.tokenExpiresAt);
   }
 }
 

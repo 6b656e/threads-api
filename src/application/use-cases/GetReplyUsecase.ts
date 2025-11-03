@@ -8,19 +8,14 @@ export class GetReplyUsecase {
   constructor(private readonly replyWithReferencesQS: IReplyWithReferencesQS) {}
 
   async execute(request: GetReplyRequest): Promise<ReplyWithReferencesDTO> {
-    validate(GetReplySchema, request);
+    const data = validate(GetReplySchema, request);
 
     const replyWithRefs = await this.replyWithReferencesQS.getReplyWithReferences(
-      request.threadID,
-      request.replyID,
+      data.threadID,
+      data.replyID,
     );
     if (!replyWithRefs) {
-      throw new NotFoundException(
-        'REPLY_NOT_FOUND_ERROR',
-        'Reply',
-        'ID',
-        request.replyID,
-      );
+      throw new NotFoundException('REPLY_NOT_FOUND_ERROR', 'Reply', 'ID', data.replyID);
     }
 
     return replyWithRefs;

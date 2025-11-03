@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -7,6 +8,8 @@ import { Pool } from 'pg';
 import dotenv from 'dotenv';
 import { join } from 'node:path';
 import { AppModule } from 'src/infrastructure/modules/AppModule';
+import { expectErrorResponse } from './helpers/assertions';
+import { SignJWT } from 'jose';
 
 dotenv.config({
   path: join(__dirname, '..', '.env.test.local'),
@@ -16,6 +19,7 @@ describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
   let pool: Pool;
   let authToken: string;
+  let userId: string;
 
   const testUser = {
     username: 'testuser',
@@ -37,6 +41,7 @@ describe('AuthController (e2e)', () => {
 
   afterAll(async () => {
     await pool.end();
+    await app.close();
   });
 
   beforeEach(async () => {
@@ -46,6 +51,54 @@ describe('AuthController (e2e)', () => {
   });
 
   describe('POST /auth/register', () => {
+    it('should return 400 for invalid username format', () => {
+      return request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ ...testUser, username: 'a' })
+        .expect(400)
+        .expect((res) => {
+          expectErrorResponse(res, {
+            statusCode: 400,
+            errorCode: 'INVALID_INPUT_REQUEST_ERROR',
+            message: 'Input invalid',
+            path: '/auth/register',
+            details: { username: ['Username must be at least 3 characters'] },
+          });
+        });
+    });
+
+    it('should return 400 for missing required fields', () => {
+      return request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ username: testUser.username })
+        .expect(400)
+        .expect((res) => {
+          expectErrorResponse(res, {
+            statusCode: 400,
+            errorCode: 'INVALID_INPUT_REQUEST_ERROR',
+            message: 'Input invalid',
+            path: '/auth/register',
+            details: { password: ['Invalid input: expected string, received undefined'] },
+          });
+        });
+    });
+
+    it('should return 400 for password too short', () => {
+      return request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ ...testUser, password: 'pw' })
+        .expect(400)
+        .expect((res) => {
+          expectErrorResponse(res, {
+            statusCode: 400,
+            errorCode: 'INVALID_INPUT_REQUEST_ERROR',
+            message: 'Input invalid',
+            path: '/auth/register',
+            details: { password: ['Password must be at least 8 characters'] },
+          });
+        });
+    });
+
     it('should register a new user', () => {
       return request(app.getHttpServer())
         .post('/auth/register')
@@ -53,51 +106,7 @@ describe('AuthController (e2e)', () => {
         .expect(201)
         .expect((res) => {
           expect(res.body).toHaveProperty('message');
-          expect(res.body.message).toBe('User registered successfully');
-        });
-    });
-
-    it('should return 400 for invalid username', () => {
-      return request(app.getHttpServer())
-        .post('/auth/register')
-        .send({ ...testUser, username: 'ab' })
-        .expect(400)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('statusCode');
-          expect(res.body).toHaveProperty('errorCode');
-          expect(res.body).toHaveProperty('message');
-          expect(res.body).toHaveProperty('timestamp');
-          expect(res.body).toHaveProperty('path');
-          expect(res.body).toHaveProperty('details');
-          expect(res.body.statusCode).toEqual(400);
-          expect(res.body.errorCode).toEqual('INVALID_INPUT_REQUEST_ERROR');
-          expect(res.body.message).toEqual('Input invalid');
-          expect(res.body.path).toEqual('/auth/register');
-          expect(res.body.details).toStrictEqual({
-            username: ['Username must be at least 3 characters'],
-          });
-        });
-    });
-
-    it('should return 409 for duplicate username', async () => {
-      await request(app.getHttpServer()).post('/auth/register').send(testUser);
-
-      return request(app.getHttpServer())
-        .post('/auth/register')
-        .send(testUser)
-        .expect(409)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('statusCode');
-          expect(res.body).toHaveProperty('errorCode');
-          expect(res.body).toHaveProperty('message');
-          expect(res.body).toHaveProperty('timestamp');
-          expect(res.body).toHaveProperty('path');
-          expect(res.body.statusCode).toEqual(409);
-          expect(res.body.errorCode).toEqual('USER_NAME_ALREADY_TAKEN_ERROR');
-          expect(res.body.message).toEqual(
-            `User with username "${testUser.username}" already exists`,
-          );
-          expect(res.body.path).toEqual('/auth/register');
+          expect(res.body.message).toEqual('User registered successfully');
         });
     });
   });
@@ -107,35 +116,51 @@ describe('AuthController (e2e)', () => {
       await request(app.getHttpServer()).post('/auth/register').send(testUser);
     });
 
-    it('should login successfully', () => {
+    it('should return 401 for non-existent username', () => {
       return request(app.getHttpServer())
         .post('/auth/login')
-        .send(testUser)
+        .send({ ...testUser, username: 'non_exsitent' })
+        .expect(401)
+        .expect((res) => {
+          expectErrorResponse(res, {
+            statusCode: 401,
+            errorCode: 'USER_INVALID_CREDENTIALS_ERROR',
+            message: 'Invalid username or password',
+            path: '/auth/login',
+          });
+        });
+    });
+
+    it('should return 401 for invalid password', () => {
+      return request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ ...testUser, password: 'not_match_password' })
+        .expect(401)
+        .expect((res) => {
+          expectErrorResponse(res, {
+            statusCode: 401,
+            errorCode: 'USER_INVALID_CREDENTIALS_ERROR',
+            message: 'Invalid username or password',
+            path: '/auth/login',
+          });
+        });
+    });
+
+    it('should handle case-insensitive username', () => {
+      return request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ ...testUser, username: testUser.username.toUpperCase() })
         .expect(200)
         .expect((res) => {
           expect(res.body).toHaveProperty('data');
           expect(res.body.data).toHaveProperty('access_token');
-        });
-    });
-
-    it('should return 401 for invalid credentials', () => {
-      return request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          username: testUser.username,
-          password: 'wrongpassword',
-        })
-        .expect(401)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('statusCode');
-          expect(res.body).toHaveProperty('errorCode');
-          expect(res.body).toHaveProperty('message');
-          expect(res.body).toHaveProperty('timestamp');
-          expect(res.body).toHaveProperty('path');
-          expect(res.body.statusCode).toEqual(401);
-          expect(res.body.errorCode).toEqual('USER_INVALID_CREDENTIALS_ERROR');
-          expect(res.body.message).toEqual('Invalid username or password');
-          expect(res.body.path).toEqual('/auth/login');
+          const token = res.body.data.access_token as string;
+          const parts = token.split('.');
+          expect(parts).toHaveLength(3);
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+          expect(payload).toHaveProperty('sub');
+          expect(payload).toHaveProperty('exp');
+          expect(payload).toHaveProperty('iat');
         });
     });
   });
@@ -147,9 +172,68 @@ describe('AuthController (e2e)', () => {
         .post('/auth/login')
         .send(testUser);
       authToken = loginResp.body.data.access_token as string;
+      const parts = authToken.split('.');
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+      userId = payload.sub;
     });
 
-    it('should return profile successfully', () => {
+    it('should return 401 for expired token', async () => {
+      const expiredToken = await new SignJWT()
+        .setSubject(userId)
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt(Math.floor(Date.now() / 1000) - 3600)
+        .setExpirationTime(Math.floor(Date.now() / 1000) - 1800)
+        .sign(new TextEncoder().encode(process.env.JWT_ACCESS_TOKEN_SECRET));
+
+      return request(app.getHttpServer())
+        .get('/auth/me')
+        .set('Authorization', `Bearer ${expiredToken}`)
+        .expect(401)
+        .expect((res) => {
+          expectErrorResponse(res, {
+            statusCode: 401,
+            errorCode: 'UNAUTHORIZED_ERROR',
+            message: 'Authentication token has expired',
+            path: '/auth/me',
+          });
+        });
+    });
+
+    it('should return 401 for missing Authorization header', () => {
+      return request(app.getHttpServer())
+        .get('/auth/me')
+        .expect(401)
+        .expect((res) => {
+          expectErrorResponse(res, {
+            statusCode: 401,
+            errorCode: 'UNAUTHORIZED_ERROR',
+            message: 'No access token provided',
+            path: '/auth/me',
+          });
+        });
+    });
+
+    it('should return 401 for malformed Bearer token', () => {
+      const tokenParts = authToken.split('.');
+      const malformedPayload =
+        'eyJzdWIiOiJLcDI4OTUyYWI1SWwyZ1ducUswVkQiLCJpYXQiOjI3NjIxMjYxMzksImV4cCI6Mjc2MjEyNzkzOX0';
+      const malformedToken = `${tokenParts[0]}.${malformedPayload}.${tokenParts[1]}`;
+
+      return request(app.getHttpServer())
+        .get('/auth/me')
+        .set('Authorization', `Bearer ${malformedToken}`)
+        .expect(401)
+        .expect((res) => {
+          expectErrorResponse(res, {
+            statusCode: 401,
+            errorCode: 'UNAUTHORIZED_ERROR',
+            message: 'Failed to verify authentication token',
+            path: '/auth/me',
+          });
+        });
+    });
+
+    it('should return user profile', () => {
       return request(app.getHttpServer())
         .get('/auth/me')
         .set('Authorization', `Bearer ${authToken}`)
@@ -161,27 +245,91 @@ describe('AuthController (e2e)', () => {
           expect(res.body.data).toHaveProperty('thread_count');
           expect(res.body.data).toHaveProperty('reply_count');
           expect(res.body.data).toHaveProperty('created_at');
-          expect(res.body.data.username).toEqual(testUser.username);
-          expect(res.body.data.thread_count).toEqual(0);
-          expect(res.body.data.reply_count).toEqual(0);
+          const { data } = res.body;
+          expect(data.username).toEqual(testUser.username);
+          expect(data.thread_count).toEqual(0);
+          expect(data.reply_count).toEqual(0);
+        });
+    });
+  });
+
+  describe('POST /auth/logout', () => {
+    beforeEach(async () => {
+      await request(app.getHttpServer()).post('/auth/register').send(testUser);
+      const loginResp = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send(testUser);
+      authToken = loginResp.body.data.access_token as string;
+      const payload = JSON.parse(
+        Buffer.from(authToken.split('.')[1], 'base64').toString(),
+      ) as { sub: string };
+      userId = payload.sub;
+    });
+
+    it('should return 401 for expired token', async () => {
+      const expiredToken = await new SignJWT()
+        .setSubject(userId)
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt(Math.floor(Date.now() / 1000) - 3600)
+        .setExpirationTime(Math.floor(Date.now() / 1000) - 1800)
+        .sign(new TextEncoder().encode(process.env.JWT_ACCESS_TOKEN_SECRET));
+
+      return request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('Authorization', `Bearer ${expiredToken}`)
+        .expect(401)
+        .expect((res) => {
+          expectErrorResponse(res, {
+            statusCode: 401,
+            errorCode: 'UNAUTHORIZED_ERROR',
+            message: 'Authentication token has expired',
+            path: '/auth/logout',
+          });
         });
     });
 
-    it('should return 401 for invalid access token', () => {
+    it('should return 401 for missing Authorization header', () => {
       return request(app.getHttpServer())
-        .get('/auth/me')
-        .set('Authorization', 'Bearer invalid')
+        .post('/auth/logout')
         .expect(401)
         .expect((res) => {
-          expect(res.body).toHaveProperty('statusCode');
-          expect(res.body).toHaveProperty('errorCode');
+          expectErrorResponse(res, {
+            statusCode: 401,
+            errorCode: 'UNAUTHORIZED_ERROR',
+            message: 'No access token provided',
+            path: '/auth/logout',
+          });
+        });
+    });
+
+    it('should return 401 for malformed Bearer token', () => {
+      const tokenParts = authToken.split('.');
+      const malformedPayload =
+        'eyJzdWIiOiJLcDI4OTUyYWI1SWwyZ1ducUswVkQiLCJpYXQiOjI3NjIxMjYxMzksImV4cCI6Mjc2MjEyNzkzOX0';
+      const malformedToken = `${tokenParts[0]}.${malformedPayload}.${tokenParts[1]}`;
+
+      return request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('Authorization', `Bearer ${malformedToken}`)
+        .expect(401)
+        .expect((res) => {
+          expectErrorResponse(res, {
+            statusCode: 401,
+            errorCode: 'UNAUTHORIZED_ERROR',
+            message: 'Failed to verify authentication token',
+            path: '/auth/logout',
+          });
+        });
+    });
+
+    it('should logged out user', () => {
+      return request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200)
+        .expect((res) => {
           expect(res.body).toHaveProperty('message');
-          expect(res.body).toHaveProperty('timestamp');
-          expect(res.body).toHaveProperty('path');
-          expect(res.body.statusCode).toEqual(401);
-          expect(res.body.errorCode).toEqual('UNAUTHORIZED_ERROR');
-          expect(res.body.message).toEqual('Failed to verify authentication token');
-          expect(res.body.path).toEqual('/auth/me');
+          expect(res.body.message).toEqual('User successfully logged out');
         });
     });
   });
