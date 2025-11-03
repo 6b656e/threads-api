@@ -3,11 +3,10 @@ import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import { globalIgnores } from 'eslint/config';
 
 export default tseslint.config(
-  {
-    ignores: ['eslint.config.mjs'],
-  },
+  globalIgnores(['eslint.config.mjs', 'test/**/*.ts']),
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   eslintPluginPrettierRecommended,

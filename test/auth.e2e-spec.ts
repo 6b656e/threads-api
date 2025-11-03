@@ -1,25 +1,18 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { App } from 'supertest/types';
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
-import { join } from 'node:path';
-import { AppModule } from 'src/infrastructure/modules/AppModule';
 import { expectErrorResponse } from './helpers/assertions';
-import { SignJWT } from 'jose';
-
-dotenv.config({
-  path: join(__dirname, '..', '.env.test.local'),
-});
+import { cleanDatabase, createTestApp, TestContext } from './helpers/setup';
+import { createExpiredToken, createMalformedToken } from './helpers/token';
+import { setupTestUser } from './helpers/entities';
 
 describe('AuthController (e2e)', () => {
-  let app: INestApplication<App>;
-  let pool: Pool;
+  let ctx: TestContext;
   let authToken: string;
-  let userId: string;
+  let userID: string;
+
+  const config = {
+    JWT_ACCESS_TOKEN_SECRET: 'test-secret',
+    PASSWORD_HASH_SALT: 'test-salt',
+  };
 
   const testUser = {
     username: 'testuser',
@@ -27,32 +20,23 @@ describe('AuthController (e2e)', () => {
   };
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-    });
+    ctx = await createTestApp(config);
   });
 
   afterAll(async () => {
-    await pool.end();
-    await app.close();
+    await ctx.app.close();
+    await ctx.pool.end();
+    await ctx.postgresContainer.stop();
+    await ctx.redisContainer.stop();
   });
 
   beforeEach(async () => {
-    await pool.query('DELETE FROM replies');
-    await pool.query('DELETE FROM threads');
-    await pool.query('DELETE FROM users');
+    await cleanDatabase(ctx.pool);
   });
 
   describe('POST /auth/register', () => {
     it('should return 400 for invalid username format', () => {
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .post('/auth/register')
         .send({ ...testUser, username: 'a' })
         .expect(400)
@@ -68,7 +52,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should return 400 for missing required fields', () => {
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .post('/auth/register')
         .send({ username: testUser.username })
         .expect(400)
@@ -84,7 +68,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should return 400 for password too short', () => {
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .post('/auth/register')
         .send({ ...testUser, password: 'pw' })
         .expect(400)
@@ -100,7 +84,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should register a new user', () => {
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .post('/auth/register')
         .send(testUser)
         .expect(201)
@@ -113,11 +97,11 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/login', () => {
     beforeEach(async () => {
-      await request(app.getHttpServer()).post('/auth/register').send(testUser);
+      await request(ctx.app.getHttpServer()).post('/auth/register').send(testUser);
     });
 
     it('should return 401 for non-existent username', () => {
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .post('/auth/login')
         .send({ ...testUser, username: 'non_exsitent' })
         .expect(401)
@@ -132,7 +116,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should return 401 for invalid password', () => {
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .post('/auth/login')
         .send({ ...testUser, password: 'not_match_password' })
         .expect(401)
@@ -147,7 +131,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should handle case-insensitive username', () => {
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .post('/auth/login')
         .send({ ...testUser, username: testUser.username.toUpperCase() })
         .expect(200)
@@ -167,25 +151,18 @@ describe('AuthController (e2e)', () => {
 
   describe('GET /auth/me', () => {
     beforeEach(async () => {
-      await request(app.getHttpServer()).post('/auth/register').send(testUser);
-      const loginResp = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send(testUser);
-      authToken = loginResp.body.data.access_token as string;
-      const parts = authToken.split('.');
-      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-      userId = payload.sub;
+      const user = await setupTestUser(ctx.app, testUser.username, testUser.password);
+      authToken = user.authToken;
+      userID = user.userID;
     });
 
     it('should return 401 for expired token', async () => {
-      const expiredToken = await new SignJWT()
-        .setSubject(userId)
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt(Math.floor(Date.now() / 1000) - 3600)
-        .setExpirationTime(Math.floor(Date.now() / 1000) - 1800)
-        .sign(new TextEncoder().encode(process.env.JWT_ACCESS_TOKEN_SECRET));
+      const expiredToken = await createExpiredToken(
+        userID,
+        config.JWT_ACCESS_TOKEN_SECRET,
+      );
 
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .get('/auth/me')
         .set('Authorization', `Bearer ${expiredToken}`)
         .expect(401)
@@ -200,7 +177,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should return 401 for missing Authorization header', () => {
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .get('/auth/me')
         .expect(401)
         .expect((res) => {
@@ -214,12 +191,9 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should return 401 for malformed Bearer token', () => {
-      const tokenParts = authToken.split('.');
-      const malformedPayload =
-        'eyJzdWIiOiJLcDI4OTUyYWI1SWwyZ1ducUswVkQiLCJpYXQiOjI3NjIxMjYxMzksImV4cCI6Mjc2MjEyNzkzOX0';
-      const malformedToken = `${tokenParts[0]}.${malformedPayload}.${tokenParts[1]}`;
+      const malformedToken = createMalformedToken(authToken);
 
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .get('/auth/me')
         .set('Authorization', `Bearer ${malformedToken}`)
         .expect(401)
@@ -234,7 +208,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should return user profile', () => {
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .get('/auth/me')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
@@ -255,26 +229,18 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/logout', () => {
     beforeEach(async () => {
-      await request(app.getHttpServer()).post('/auth/register').send(testUser);
-      const loginResp = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send(testUser);
-      authToken = loginResp.body.data.access_token as string;
-      const payload = JSON.parse(
-        Buffer.from(authToken.split('.')[1], 'base64').toString(),
-      ) as { sub: string };
-      userId = payload.sub;
+      const user = await setupTestUser(ctx.app, testUser.username, testUser.password);
+      authToken = user.authToken;
+      userID = user.userID;
     });
 
     it('should return 401 for expired token', async () => {
-      const expiredToken = await new SignJWT()
-        .setSubject(userId)
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt(Math.floor(Date.now() / 1000) - 3600)
-        .setExpirationTime(Math.floor(Date.now() / 1000) - 1800)
-        .sign(new TextEncoder().encode(process.env.JWT_ACCESS_TOKEN_SECRET));
+      const expiredToken = await createExpiredToken(
+        userID,
+        config.JWT_ACCESS_TOKEN_SECRET,
+      );
 
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .post('/auth/logout')
         .set('Authorization', `Bearer ${expiredToken}`)
         .expect(401)
@@ -289,7 +255,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should return 401 for missing Authorization header', () => {
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .post('/auth/logout')
         .expect(401)
         .expect((res) => {
@@ -303,12 +269,9 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should return 401 for malformed Bearer token', () => {
-      const tokenParts = authToken.split('.');
-      const malformedPayload =
-        'eyJzdWIiOiJLcDI4OTUyYWI1SWwyZ1ducUswVkQiLCJpYXQiOjI3NjIxMjYxMzksImV4cCI6Mjc2MjEyNzkzOX0';
-      const malformedToken = `${tokenParts[0]}.${malformedPayload}.${tokenParts[1]}`;
+      const malformedToken = createMalformedToken(authToken);
 
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .post('/auth/logout')
         .set('Authorization', `Bearer ${malformedToken}`)
         .expect(401)
@@ -323,7 +286,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should logged out user', () => {
-      return request(app.getHttpServer())
+      return request(ctx.app.getHttpServer())
         .post('/auth/logout')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
