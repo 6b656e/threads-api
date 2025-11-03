@@ -45,8 +45,8 @@ export class Reply {
     }
     if (!this.content || this.content.trim().length === 0) {
       throw new InvalidArgumentException(
-        'REPLY_CONTENT_TOO_SHORT_ERROR',
-        'Author ID cannot be empty',
+        'REPLY_CONTENT_EMPTY_ERROR',
+        'Reply content cannot be empty',
       );
     }
   }

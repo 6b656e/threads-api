@@ -43,16 +43,20 @@ export class PgReplyWithReferencesQS implements IReplyWithReferencesQS {
         SELECT DISTINCT id, username
         FROM users
         WHERE id IN (
-          SELECT author_id FROM replies WHERE id = $1
+          SELECT author_id FROM replies
+          WHERE
+            id = $1 AND
+            thread_id = $2
           UNION
-          SELECT author_id FROM threads WHERE id = $2)`;
+          SELECT author_id FROM threads
+          WHERE id = $2)`;
 
       const [replies, threads, authors] = await Promise.all([
         client.query<ReplyDTO>(replyQuery, [replyID, threadID]),
         client.query<ThreadDTO>(threadQuery, [threadID]),
         client.query<AuthorDTO>(authorsQuery, [replyID, threadID]),
       ]);
-      if (!authors.rowCount) return null;
+      if (!authors.rowCount || !replies.rowCount) return null;
       return {
         reply: replies.rows[0],
         thread: threads.rows[0],
