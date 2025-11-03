@@ -1,98 +1,246 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Threads API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Table of Contents
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+- [Project Overview](#project-overview)
+- [Architecture & Design](#architecture--design)
+- [Technology Stack](#technology-stack)
+- [Design Patterns](#design-patterns)
+- [Security Implementation](#security-implementation)
+- [Setup & Configuration](#setup--configuration)
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Project Overview
 
-## Project setup
+**Threads API** is a RESTful backend service built with NestJS that provides a social media platform for users to create threads and reply to them. The project exemplifies clean architecture principles and production-ready code organization.
 
-```bash
-$ pnpm install
+### Key Capabilities
+
+- User registration and JWT-based authentication
+- Thread creation
+- Threaded replies system
+- User profiles with activity metrics
+- User timeline aggregation
+
+---
+
+## Architecture & Design
+
+### Clean Architecture
+
+This project implements Clean Architecture to achieve:
+- Separation of Concerns
+- Technology Independence
+- Testability
+- Maintainability
+
+### Why This Architecture?
+
+#### **Domain Layer**
+
+Contains the core business entities and rules that are technology-agnostic.
+
+**Why**:
+- Business rules are protected from external changes
+- Entities encapsulate invariants (rules that must always be true)
+- Domain exceptions represent business rule violations
+
+#### **Application Layer**
+
+Orchestrates business logic through use cases and defines interfaces (ports) for external dependencies.
+
+**Why**:
+- Use Cases represent application-specific business rules
+- Ports (Interfaces) define what the application needs without caring about implementation
+
+#### **Infrastructure Layer**
+
+Provides concrete implementations of ports defined in the application layer.
+
+**Why**:
+- Easily swap implementations (e.g., PostgreSQL to MongoDB)
+
+#### **Presentation Layer**
+
+Handles HTTP communication, request/response transformation, and cross-cutting concerns.
+
+**Why**:
+- Delegate work to use cases
+- Protect routes with authentication
+- Centralized error handling
+
+### Database Schema
+
+```sql
+-- Users Table
+CREATE TABLE users (
+  id VARCHAR(50) PRIMARY KEY,
+  username VARCHAR(255) UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Threads Table
+CREATE TABLE threads (
+  id VARCHAR(50) PRIMARY KEY,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  author_id VARCHAR(50) NOT NULL REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Replies Table
+CREATE TABLE replies (
+  id VARCHAR(50) PRIMARY KEY,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  thread_id VARCHAR(50) NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+  author_id VARCHAR(50) NOT NULL REFERENCES users(id) ON DELETE CASCADE
+);
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ pnpm run start
+## Technology Stack
 
-# watch mode
-$ pnpm run start:dev
+### Core Framework
+- **NestJS**: TypeScript framework with built-in DI, modular architecture
 
-# production mode
-$ pnpm run start:prod
+### Database & Persistence
+- **PostgreSQL**: Relational database
+- **pg**: Native PostgreSQL client
+- **node-pg-migrate**: Database migration tool
+
+### Caching & Session Management
+- **Redis**: In-memory data store
+
+### Authentication & Security
+- **Jose**: JWT implementation
+- **Node.js Crypto (Scrypt)**: Password hashing
+- **Zod**: Runtime type validation
+
+### Development Tools
+- **Jest**: Testing framework
+- **ESLint + Prettier**: Code quality and formatting
+
+---
+
+## Design Patterns
+
+### Repository Pattern
+
+- Abstracts data access logic behind interfaces
+- Decouples business logic from database implementation
+- Makes testing easier (mock repositories)
+- Allows database switching without changing business logic
+
+### Query Service Pattern (Avoiding Fat Repositories)
+
+- Separate interfaces for complex read operations
+- Database-optimized JOINs and aggregations
+- Writes enforce business rules, reads are projections
+
+### Global Exception Filter
+
+- Centralized error handling for all exceptions
+- All errors follow same format
+- Single place to log errors
+- Hides internal errors from clients
+
+---
+
+## Security Implementation
+
+### 1. Password Security
+
+Scrypt algorithm with OWASP-recommended parameters
+
+```typescript
+const SCRYPT_CONFIG = {
+  N: Math.pow(2, 17),  // CPU/memory cost: 131,072 (OWASP minimum: 2^15)
+  r: 8,                // Block size: 8 (OWASP recommended)
+  p: 1,                // Parallelization: 1 (OWASP recommended)
+  keylen: 64,          // Output length: 64 bytes
+  maxmem: 128 * N * r + 1024 * 1024  // Required memory calculation
+};
 ```
 
-## Run tests
+**Why Scrypt**:
+- No external dependencies
+- Recommended by OWASP alongside Argon2id
+
+**Reference**: [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+
+### 2. JWT Token Management
+
+- Access tokens with configurable expiration
+- Token blacklisting on logout (Uses Redis for fast lookups with TTL
+
+### 3. Zod Validation
+
+- Catches invalid input before it reaches business logic
+- Infers TypeScript types from schemas
+- Detailed validation feedback
+
+### 4. Request Logging & Auditing
+
+- Request ID for tracing
+- Start/end logging with duration
+- Trace request flow
+- Track slow requests
+
+---
+
+## Setup & Configuration
+
+### Prerequisites
+- Node.js
+- PostgreSQL
+- Redis
+
+### Environment Variables
+
+Create `.env` file:
 
 ```bash
-# unit tests
-$ pnpm run test
+# Application
+APP_PORT=3000
 
-# e2e tests
-$ pnpm run test:e2e
+# Database
+DATABASE_URL=
 
-# test coverage
-$ pnpm run test:cov
+# Redis
+REDIS_URL=
+
+# Security
+PASSWORD_HASH_SALT=secret-salt-min-20-chars
+JWT_ACCESS_TOKEN_SECRET=jwt-secret-min-20-chars
+JWT_ACCESS_TOKEN_EXP_TIME=2h
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Installation
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+# Install dependencies
+pnpm install
+
+# Run migrations
+pnpm run migrate up
+
+# Optional: Seed database
+pnpm run seed
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Running the Application
 
-## Resources
+```bash
+# Development (watch mode)
+pnpm run start:dev
 
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Production
+pnpm run build
+pnpm run start:prod
+```
